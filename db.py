@@ -12,7 +12,7 @@ from dash.dash_table import DataTable
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
 server=app.server
-excel_file = 'https://github.com/sayedkhalidsultani/PolicyAndKnowledge/blob/1422cb9183b3afc6fc4d4bafce7f0339c297fae5/Result.xlsx'
+excel_file = 'https://github.com/sayedkhalidsultani/PolicyAndKnowledge/blob/main/Result.xlsx'
 df = pd.read_excel(excel_file)
 color_palette = ['#b2182b', '#ef8a62', '#fddbc7', '#d1e5f0', '#67a9cf', '#34495E']
 app.layout = html.Div([
