@@ -11,7 +11,7 @@ from dash.dash_table import DataTable
 # Assuming df is your DataFrame after loading the data from your source
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
-server=app.server
+
 excel_file = 'https://raw.githubusercontent.com/sayedkhalidsultani/PolicyAndKnowledge/main/Result.csv'
 df = pd.read_csv(excel_file)
 color_palette = ['#b2182b', '#ef8a62', '#fddbc7', '#d1e5f0', '#67a9cf', '#34495E']
