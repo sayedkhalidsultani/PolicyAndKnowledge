@@ -1,0 +1,94 @@
+﻿Indicator,Xcolumns,Colors,Year,Quarter,Year-Quarter,Values,ChartType,Category,Source,xSecondary,ValueType,YaxisTitle,SortOrder
+Electricy Consumption By UserType,Mosque,2020,2022,,2022-,2,Bar,HouseHold,NSIA,,N,,0
+Electricy Consumption By UserType,Mosque,2021,2022,,2022-,1,Bar,HouseHold,NSIA,,N,,0
+Electricy Consumption By UserType,Mosque,2022,2022,,2022-,1,Bar,HouseHold,NSIA,,N,,0
+Electricy Consumption By UserType,Government,2020,2022,,2022-,9,Bar,HouseHold,NSIA,,N,,0
+Electricy Consumption By UserType,Government,2021,2022,,2022-,10,Bar,HouseHold,NSIA,,N,,0
+Electricy Consumption By UserType,Government,2022,2022,,2022-,10,Bar,HouseHold,NSIA,,N,,0
+Foreign Trade,Exports,2020,2020,,2020-,1.4,Bar,GPD,MSNA,,N,,0
+Foreign Trade,Exports,2021,2021,,2021-,1.4,Bar,GPD,MSNA,,N,,0
+Foreign Trade,Exports,2022,2022,,2022-,2,Bar,GPD,MSNA,,N,,0
+Foreign Trade,Imports,2020,2020,,2020-,7.7,Bar,GPD,MSNA,,N,,0
+Foreign Trade,Imports,2021,2021,,2021-,5.9,Bar,GPD,MSNA,,N,,0
+Foreign Trade,Imports,2022,2022,,2022-,8.2,Bar,GPD,MSNA,,N,,0
+Foreign Trade,TradeDeficit,2020,2020,,2020-,-6.3,Bar,GPD,MSNA,,N,,0
+Foreign Trade,TradeDeficit,2021,2021,,2021-,-4.5,Bar,GPD,MSNA,,N,,0
+Foreign Trade,TradeDeficit,2022,2022,,2022-,-6.1,Bar,GPD,MSNA,,N,,0
+"Substance Insecurity , HeadCount Ratio",All,2022,2022,,2022-,85,Bar,HouseHold,NSIA,,N,,0
+"Substance Insecurity , HeadCount Ratio",All,2023,2023,,2023-,69,Bar,HouseHold,NSIA,,N,,0
+"Substance Insecurity , HeadCount Ratio",Urban,2022,2022,,2022-,78,Bar,HouseHold,NSIA,,N,,0
+"Substance Insecurity , HeadCount Ratio",Urban,2023,2023,,2023-,55,Bar,HouseHold,NSIA,,N,,0
+Monthly Inflow and outflow (Thousand Individuals),Jan,Total OutFlow,2023,,2023-,525,Line,HouseHold,IOM DTM,,N,,100
+Monthly Inflow and outflow (Thousand Individuals),Feb,Total OutFlow,2023,,2023-,507,Line,HouseHold,IOM DTM,,N,,101
+Monthly Inflow and outflow (Thousand Individuals),Mar,Total OutFlow,2023,,2023-,500,Line,HouseHold,IOM DTM,,N,,102
+Monthly Inflow and outflow (Thousand Individuals),Apr,Total OutFlow,2023,,2023-,232,Line,HouseHold,IOM DTM,,N,,103
+Monthly Inflow and outflow (Thousand Individuals),May,Total OutFlow,2023,,2023-,542,Line,HouseHold,IOM DTM,,N,,104
+Monthly Inflow and outflow (Thousand Individuals),Jun,Total OutFlow,2023,,2023-,471,Line,HouseHold,IOM DTM,,N,,105
+Monthly Inflow and outflow (Thousand Individuals),Jul,Total OutFlow,2023,,2023-,95,Line,HouseHold,IOM DTM,,N,,106
+Monthly Inflow and outflow (Thousand Individuals),Aug,Total OutFlow,2023,,2023-,70,Line,HouseHold,IOM DTM,,N,,107
+Monthly Inflow and outflow (Thousand Individuals),Jan,Total Inflow,2023,,2023-,512,Line,HouseHold,IOM DTM,,N,,100
+Monthly Inflow and outflow (Thousand Individuals),Feb,Total Inflow,2023,,2023-,540,Line,HouseHold,IOM DTM,,N,,101
+Monthly Inflow and outflow (Thousand Individuals),Mar,Total Inflow,2023,,2023-,610,Line,HouseHold,IOM DTM,,N,,102
+Monthly Inflow and outflow (Thousand Individuals),Apr,Total Inflow,2023,,2023-,253,Line,HouseHold,IOM DTM,,N,,103
+Monthly Inflow and outflow (Thousand Individuals),May,Total Inflow,2023,,2023-,524,Line,HouseHold,IOM DTM,,N,,104
+Monthly Inflow and outflow (Thousand Individuals),Jun,Total Inflow,2023,,2023-,534,Line,HouseHold,IOM DTM,,N,,105
+Monthly Inflow and outflow (Thousand Individuals),Jul,Total Inflow,2023,,2023-,145,Line,HouseHold,IOM DTM,,N,,106
+Monthly Inflow and outflow (Thousand Individuals),Aug,Total Inflow,2023,,2023-,103,Line,HouseHold,IOM DTM,,N,,107
+Public Empoyment in Thousand,Total,2019,2019,,2019-,394,Bar,HouseHold,NSIA 2022-2023,,N,,202
+Public Empoyment in Thousand,Total,2020,2020,,2020-,415,Bar,HouseHold,NSIA 2022-2023,,N,,202
+Public Empoyment in Thousand,Total,2021,2021,,2021-,406,Bar,HouseHold,NSIA 2022-2023,,N,,202
+Public Empoyment in Thousand,Total,2022,2022,,2022-,407,Bar,HouseHold,NSIA 2022-2023,,N,,202
+Public Empoyment in Thousand,Male,2019,2019,,2019-,303,Bar,HouseHold,NSIA 2022-2023,,N,,200
+Public Empoyment in Thousand,Male,2020,2020,,2020-,308,Bar,HouseHold,NSIA 2022-2023,,N,,200
+Public Empoyment in Thousand,Male,2021,2021,,2021-,316,Bar,HouseHold,NSIA 2022-2023,,N,,200
+Public Empoyment in Thousand,Male,2022,2022,,2022-,321,Bar,HouseHold,NSIA 2022-2023,,N,,200
+Public Empoyment in Thousand,Female,2019,2019,,2019-,91,Bar,HouseHold,NSIA 2022-2023,,N,,201
+Public Empoyment in Thousand,Female,2020,2020,,2020-,107,Bar,HouseHold,NSIA 2022-2023,,N,,201
+Public Empoyment in Thousand,Female,2021,2021,,2021-,90,Bar,HouseHold,NSIA 2022-2023,,N,,201
+Public Empoyment in Thousand,Female,2022,2022,,2022-,86,Bar,HouseHold,NSIA 2022-2023,,N,,201
+"Subsistence insecurity indices by location,gender of household head and total (% of total pop 2022-2023)",All,2022,2022,,2022-,46,Bar,HouseHold,NSIA 2022-2023,,P,% of Total Population,0
+"Subsistence insecurity indices by location,gender of household head and total (% of total pop 2022-2023)",All,2023,2023,,2023-,35,Bar,HouseHold,NSIA 2022-2023,,P,% of Total Population,0
+"Subsistence insecurity indices by location,gender of household head and total (% of total pop 2022-2023)",Urban,2022,2022,,2022-,39,Bar,HouseHold,NSIA 2022-2023,,P,% of Total Population,0
+"Subsistence insecurity indices by location,gender of household head and total (% of total pop 2022-2023)",Urban,2023,2023,,2023-,27,Bar,HouseHold,NSIA 2022-2023,,P,% of Total Population,0
+"Subsistence insecurity indices by location,gender of household head and total (% of total pop 2022-2023)",Rural,2022,2023,,2023-,48,Bar,HouseHold,NSIA 2022-2024,,P,% of Total Population,0
+"Subsistence insecurity indices by location,gender of household head and total (% of total pop 2022-2023)",Rural,2023,2023,,2023-,38,Bar,HouseHold,NSIA 2022-2025,,P,% of Total Population,0
+"Subsistence insecurity indices by location,gender of household head and total (% of total pop 2022-2023)",Male-Headed HH,2022,2023,,2023-,45,Bar,HouseHold,NSIA 2022-2025,,P,% of Total Population,0
+"Subsistence insecurity indices by location,gender of household head and total (% of total pop 2022-2023)",Male-Headed HH,2023,2023,,2023-,35,Bar,HouseHold,NSIA 2022-2025,,P,% of Total Population,0
+"Subsistence insecurity indices by location,gender of household head and total (% of total pop 2022-2023)",Female-Headed HH,2022,2023,,2023-,53,Bar,HouseHold,NSIA 2022-2025,,P,% of Total Population,0
+"Subsistence insecurity indices by location,gender of household head and total (% of total pop 2022-2023)",Female-Headed HH,2023,2023,,2023-,48,Bar,HouseHold,NSIA 2022-2025,,P,% of Total Population,0
+Shilter and Utilities for HHs,No Damage Shilter,2021,2021,,2021-,29,Bar,HouseHold,NSIA 2022-2025,,P,% of Household,2
+Shilter and Utilities for HHs,No Damage Shilter,2022,2022,,2022-,23,Bar,HouseHold,NSIA 2022-2025,,P,% of Household,2
+Shilter and Utilities for HHs,No Damage Shilter,2023,2023,,2023-,38,Bar,HouseHold,NSIA 2022-2025,,P,% of Household,2
+Shilter and Utilities for HHs,Heating Devices,2021,2021,,2021-,47,Bar,HouseHold,NSIA 2022-2026,,P,% of Household,1
+Shilter and Utilities for HHs,Heating Devices,2022,2022,,2022-,46,Bar,HouseHold,NSIA 2022-2027,,P,% of Household,1
+Shilter and Utilities for HHs,Heating Devices,2023,2023,,2023-,61,Bar,HouseHold,NSIA 2022-2028,,P,% of Household,1
+Shilter and Utilities for HHs,Public Piped Water,2021,2021,,2021-,19,Bar,HouseHold,NSIA 2022-2029,,P,% of Household,3
+Shilter and Utilities for HHs,Public Piped Water,2022,2022,,2022-,20,Bar,HouseHold,NSIA 2022-2030,,P,% of Household,3
+Shilter and Utilities for HHs,Public Piped Water,2023,2023,,2023-,19,Bar,HouseHold,NSIA 2022-2031,,P,% of Household,3
+Shilter and Utilities for HHs,Full Mobile Coverage,2021,2021,,2021-,42,Bar,HouseHold,NSIA 2022-2032,,P,% of Household,4
+Shilter and Utilities for HHs,Full Mobile Coverage,2022,2022,,2022-,22,Bar,HouseHold,NSIA 2022-2033,,P,% of Household,4
+Shilter and Utilities for HHs,Full Mobile Coverage,2023,2023,,2023-,39,Bar,HouseHold,NSIA 2022-2034,,P,% of Household,4
+Shilter and Utilities for HHs,Electricity Main Grid,2021,2021,,2021-,,Bar,HouseHold,NSIA 2022-2035,,P,% of Household,5
+Shilter and Utilities for HHs,Electricity Main Grid,2022,2022,,2022-,37,Bar,HouseHold,NSIA 2022-2036,,P,% of Household,5
+Shilter and Utilities for HHs,Electricity Main Grid,2023,2023,,2023-,43,Bar,HouseHold,NSIA 2022-2037,,P,% of Household,5
+HH CashFlow (in AFN),Income,2021,2021,,2021-,7796,Bar,HouseHold,NSIA 2022-2037,,N,,0
+HH CashFlow (in AFN),Income,2022,2022,,2022-,6489,Bar,HouseHold,NSIA 2022-2037,,N,,0
+HH CashFlow (in AFN),Income,2023,2023,,2023-,10671,Bar,HouseHold,NSIA 2022-2037,,N,,0
+HH CashFlow (in AFN),Expindature,2021,2021,,2021-,-10017,Bar,HouseHold,NSIA 2022-2037,,N,,0
+HH CashFlow (in AFN),Expindature,2022,2022,,2022-,-10706,Bar,HouseHold,NSIA 2022-2037,,N,,0
+HH CashFlow (in AFN),Expindature,2023,2023,,2023-,-12874,Bar,HouseHold,NSIA 2022-2037,,N,,0
+HH CashFlow (in AFN),Net Income,2021,2021,,2021-,-2221,Bar,HouseHold,NSIA 2022-2037,,N,,0
+HH CashFlow (in AFN),Net Income,2022,2022,,2022-,-4217,Bar,HouseHold,NSIA 2022-2037,,N,,0
+HH CashFlow (in AFN),Net Income,2023,2023,,2023-,-2202,Bar,HouseHold,NSIA 2022-2037,,N,,0
+HH CashFlow (in AFN),Debt Amount,2021,2021,,2021-,-48739,Bar,HouseHold,NSIA 2022-2037,,N,,0
+HH CashFlow (in AFN),Debt Amount,2022,2022,,2022-,-59196,Bar,HouseHold,NSIA 2022-2037,,N,,0
+HH CashFlow (in AFN),Debt Amount,2023,2023,,2023-,-48527,Bar,HouseHold,NSIA 2022-2037,,N,,0
+international trade in good,Exports,2020,2020,,2020-,0.8,Bar,HouseHold,NSIA 2022-2037,,N,,0
+international trade in good,Exports,2021,2021,,2021-,0.9,Bar,HouseHold,NSIA 2022-2037,,N,,0
+international trade in good,Exports,2022,2022,,2022-,1.8,Bar,HouseHold,NSIA 2022-2037,,N,,0
+international trade in good,Imports,2020,2020,,2020-,6.5,Bar,HouseHold,NSIA 2022-2037,,N,,0
+international trade in good,Imports,2021,2021,,2021-,5.3,Bar,HouseHold,NSIA 2022-2037,,N,,0
+international trade in good,Imports,2022,2022,,2022-,6.5,Bar,HouseHold,NSIA 2022-2037,,N,,0
+international trade in good,Trade Deficit,2020,2020,,2020-,-5.7,Bar,HouseHold,NSIA 2022-2037,,N,,0
+international trade in good,Trade Deficit,2021,2021,,2021-,-4.4,Bar,HouseHold,NSIA 2022-2037,,N,,0
+international trade in good,Trade Deficit,2022,2022,,2022-,-4.7,Bar,HouseHold,NSIA 2022-2037,,N,,0
