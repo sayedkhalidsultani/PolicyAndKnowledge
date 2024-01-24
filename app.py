@@ -17,7 +17,7 @@ df = pd.read_csv(excel_file)
 color_palette = ['#b2182b', '#ef8a62', '#fddbc7', '#d1e5f0', '#67a9cf', '#34495E']
 app.layout = html.Div([
     dbc.Container([
-        dbc.Row(dbc.Col(html.H3("Policy & Knowledge Unit"), width=12), justify='center'),
+        dbc.Row(dbc.Col(html.H3("Policy AND Knowledge Unit"), width=12), justify='center'),
         dbc.Row(
             dbc.Col(
                 [
