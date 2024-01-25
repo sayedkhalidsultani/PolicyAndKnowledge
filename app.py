@@ -6,27 +6,32 @@ import pandas as pd
 import dash_bootstrap_components as dbc
 import plotly.graph_objs as go
 from dash.dash_table import DataTable
+import numpy as np
+from dash.dash_table.Format import Format, Scheme
+from dash.dash_table import DataTable, FormatTemplate
+
 
 # Sample DataFrame (replace this with your dynamic data source)
 # Assuming df is your DataFrame after loading the data from your source
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
-server=app.server
-excel_file = 'https://raw.githubusercontent.com/sayedkhalidsultani/PolicyAndKnowledge/main/Result.csv'
+# Make sure to change this path when you upload it to github.
+excel_file = 'Result.csv'
 df = pd.read_csv(excel_file)
 color_palette = ['#b2182b', '#ef8a62', '#fddbc7', '#d1e5f0', '#67a9cf', '#34495E']
 app.layout = html.Div([
+    dbc.Spinner(html.Div(id="loading-output"), spinner_style={"width": "3rem", "height": "3rem"}, color="primary", fullscreen=True),
     dbc.Container([
-        dbc.Spinner(html.Div(id="loading-output"), spinner_style={"width": "3rem", "height": "3rem"}, color="primary", fullscreen=True),
-        dbc.Row(dbc.Col(html.H3("Policy AND Knowledge Unit"), width=12), justify='center'),
+        dbc.Row(dbc.Col(html.H3("Policy And Knowledge Unit"), width=12), justify='center'),
         dbc.Row(
             dbc.Col(
                 [
                     dcc.Dropdown(
                         id='category-dropdown',
-                        options=[{'label': i, 'value': i} for i in df['Category'].unique()],
-                        value=df['Category'].unique()[0]  # Default value
-                    ),
+                          options=[{'label': str(i) if i else 'Default', 'value': str(i) if i else 'Default'}
+                             for i in df['Category'].dropna().unique()],
+                            value=str(df['Category'].dropna().unique()[0]) 
+                            ),
                     # This Div will contain the chart and summaries split into two columns
                     html.Div(
                         [
@@ -48,8 +53,45 @@ app.layout = html.Div([
     ], style={'maxWidth': '1024px', 'margin': '10px auto', 'border': '1px solid silver', 'background': 'white','padding-bottom':'20px'}),
 ], style={'display': 'flex', 'flexDirection': 'column', 'justifyContent': 'space-between', 'background': 'silver'})
 
+# Addition of UniqueID
 
 
+
+def dynamic_calculation(df):
+    df_copy = df.copy()
+    df_copy.sort_values(by='SortOrder', inplace=True)
+    calculated_values = {}
+
+    for index, row in df_copy.iterrows():
+        calculation = row['Calculation']
+        if pd.isna(calculation) or calculation.strip() == '':
+            # If calculation is NaN or empty, use the existing Values
+            calculated_values[row['UniqueID']] = row['Values']
+            continue
+
+        # Replace placeholders in the calculation string with actual values
+        for placeholder in df_copy['UniqueID']:
+            # Check if the placeholder is in the calculation string
+            if placeholder in calculation:
+                # Get the value for the placeholder
+                value = df_copy.loc[df_copy['UniqueID'] == placeholder, 'Values'].iloc[0]
+                # If the value is NaN, skip this placeholder
+                if pd.isna(value):
+                    print(f"Skipping placeholder {placeholder} because its value is NaN")
+                    continue
+                # Replace the placeholder with its value in the calculation string
+                calculation = calculation.replace(placeholder, str(value))
+        
+        # Evaluate the calculation string
+        try:
+            calculated_values[row['UniqueID']] = eval(calculation)
+        except Exception as e:
+            print(f"Error evaluating calculation for {row['UniqueID']}: {e}")
+            calculated_values[row['UniqueID']] = np.nan  # Use np.nan to represent a failed calculation
+
+    # Update the original DataFrame with the calculated values
+    for unique_id, value in calculated_values.items():
+        df.loc[df['UniqueID'] == unique_id, 'Values'] = value
 
 
 
@@ -67,18 +109,40 @@ def update_bar_charts(selected_category):
     filtered_df['Colors'] = filtered_df['Colors'].astype(str)
     
     # Get a list of all indicators for the selected category
+    df['Indicator'] = df['Indicator'].str.strip()
+
     indicators = filtered_df['Indicator'].unique()
+
    
 
 
   
     # Create a bar chart for each indicator
     charts = []
+    tables=[]
     for indicator in indicators:
         indicator_df = filtered_df[filtered_df['Indicator'] == indicator]
-        indicator_df['SortOrder'] = indicator_df['SortOrder'].astype(int)
+
+        indicator_df['SortOrder'] = indicator_df['SortOrder'].fillna(0.0)
+
+        indicator_df['SortOrder'] = pd.to_numeric(indicator_df['SortOrder'], errors='coerce')
         indicator_df.sort_values(by=['SortOrder','Indicator'], inplace=True)
+      
+
+
+        # if 'Calculation' in indicator_df.columns:
+        #             indicator_df['Values'] = indicator_df.apply(lambda row: dynamic_calculation(row, indicator_df), axis=1)
+
+        # Use the function to update the DataFrame before you start creating charts or tables
+        
+
+       
+
+      
+
         chart_type = indicator_df['ChartType'].iloc[0]
+      
+
         summary_df = indicator_df.groupby(['Indicator','Colors'])['Values'].describe(include='all')
         yaxis_title = indicator_df['YaxisTitle'].iloc[0]
         if pd.isna(yaxis_title):
@@ -95,9 +159,89 @@ def update_bar_charts(selected_category):
                add_secondary_chart(fig,linevalues , 'Line')
  
         else:
+           
             if chart_type == 'Bar':
                 fig = create_bar_chart(indicator_df, indicator,yaxis_title,value_type)
-            elif chart_type == 'Line':
+            if chart_type == 'Table':
+                table_header = html.Label(indicator, style={'textAlign': 'center', 'margin-top': '10px','font-size':'14px','display':'block'})
+                dynamic_calculation(indicator_df)
+               # Pivot the DataFrame to get "Year" columns as part of the data
+             
+                pivot_df = indicator_df.pivot_table(
+                    values='Values',
+                    index='Xcolumns',
+                    columns='Year',
+                    aggfunc='first'
+                ).reset_index()
+                # Filter out the row with 'Xcolumns' as its value
+
+                # After Sorting Join it back to get correct sort order
+
+                pivot_df = pivot_df.merge(
+                    indicator_df[['Xcolumns', 'SortOrder']].drop_duplicates(),
+                    on='Xcolumns',
+                    how='left'
+                ).drop_duplicates('Xcolumns').sort_values(by='SortOrder')
+
+                # Now sort pivot_df by SortOrder
+                pivot_df.sort_values(by='SortOrder', inplace=True)
+
+                # Remove the SortOrder column if you don't want it in your final table
+                pivot_df.drop(columns=['SortOrder'], inplace=True)
+
+
+
+               
+                # Create a list of columns for DataTable
+              # Create a list of columns for DataTable
+                columns = [{'name': 'Indicator', 'id': 'Xcolumns'}] + [
+                {
+                    'name': str(int(year)),  # Convert year to integer to remove decimals
+                    'id': str(year),
+                    'type': 'numeric',
+                    'format': Format(precision=2, scheme=Scheme.fixed)  # Format for two decimal places
+                }
+                for year in pivot_df.columns if year != 'Xcolumns'
+            ]
+
+                # Create the data table component
+        
+
+                data_table = DataTable(
+                    id=f'table-{indicator}',
+                    columns=columns,
+                    data=pivot_df.to_dict('records'),
+                    column_selectable=False,
+                    style_table={'overflow': 'auto','border':'1px solid silver'},
+                    style_cell={'textAlign': 'left'},
+                    # style_header={
+                    #     'textAlign': 'center'
+                    # },
+                    # style_data_conditional=[
+                    #     {
+                    #         'if': {'column_id': str(year)},
+                    #         'textAlign': 'center'  # Center-align the numerical columns
+                    #     }
+                    #     for year in pivot_df.columns if year != 'Xcolumns'
+                    # ]
+                )  
+
+                # adding border to dynamic datatable
+                data_table_with_border = html.Div(
+                    [table_header, data_table],
+                    style={
+                        'border': '1px solid silver',  # Adding a 1px solid border
+                        'padding': '10px',
+                        'margin-top': '10px',
+                        'margin-bottom': '10px'  # Adds space between tables
+                    }
+                )
+
+           
+
+            # Append the data table to the charts
+             #   charts.append(html.Div([data_table]))
+            if chart_type == 'Line':
                 fig = create_line_chart(indicator_df, indicator,yaxis_title)
                       
 
@@ -112,25 +256,47 @@ def update_bar_charts(selected_category):
                     'margin-bottom': '10px'  # Optional: Adds space between charts
                 }
             )
+        if chart_type == 'Table':
+                # ... [code to create table]
+                  tables.append(data_table_with_border)  # Add tables to the tables list
+        else:
+                # ... [code to create chart]
+                charts.append(graph_with_border)  # Add charts to the charts list
+
+    # Append tables at the end of the charts
+        charts.extend(tables)
+        
+
                
-        charts.append(graph_with_border)
+        #charts.append(graph_with_border)
         
         # Adding Summary
 
         # Add Summary for percentage Functions
          # Create a custom aggregation function
         def custom_agg(group):
+            # To Exclude sum for rows containing Avg
+            if 'Avg' in group['Xcolumns'].iloc[0]:
+                return ""  # Return a blank string for rows with 'Avg'
             if group['ValueType'].iloc[0] == 'P':  # Check if the group is for percentages
                 # Sum the values after converting to float, divide by 100, and then multiply by 100
                 total_sum = indicator_df['Values'].sum()
-                return (group['Values'].astype(float).sum() / total_sum) * 100
+                percentage = (group['Values'].astype(float).sum() / total_sum) * 100
+                return round(percentage, 2)  # Round the
             else:
-                return group['Values'].sum()
+                 sum_value = group['Values'].sum()
+                 return round(sum_value, 2)
      
         #indicator_df = filtered_df[filtered_df['Indicator'] == indicator]
-    
-        summary_df = indicator_df.groupby('Xcolumns', sort=False).apply(custom_agg).reset_index()
-        summary_df.columns = ['Xcolumns', 'Sum' if indicator_df['ValueType'].iloc[0] != 'P' else 'Percentage']
+            # Check if 'xSecondary' column has any non-null values
+        secondary_df = indicator_df[indicator_df['xSecondary'].notnull()]
+        if not secondary_df.empty:
+            indicator_df = indicator_df[indicator_df['xSecondary'].str.contains('B')]
+            summary_df = indicator_df.groupby('Year').apply(custom_agg).reset_index()
+            summary_df.columns = ['Year', 'Sum']
+        else:
+            summary_df = indicator_df.groupby('Xcolumns', sort=False).apply(custom_agg).reset_index()
+            summary_df.columns = ['Xcolumns', 'Sum' if indicator_df['ValueType'].iloc[0] != 'P' else 'Percentage']
 
         # Add mean, min, max calculations to summary_df
         additional_stats = indicator_df.groupby('Xcolumns',sort=False)['Values'].agg(['mean', 'min', 'max']).reset_index(drop=True)
@@ -151,10 +317,13 @@ def update_bar_charts(selected_category):
                 columns=columns,
                 data=summary_df.to_dict('records'),
                 style_table={'overflow': 'auto','border':'1px solid silver'},
-                style_cell={'textAlign': 'center'}
+                style_cell={'textAlign': 'left'},
+                export_format="csv",  # Enable export to CSV
+                export_headers="display",
+            
             )
         charts.append(html.Div([summary_title, table]))
-
+   
     return charts
 
 # New Code
@@ -207,6 +376,12 @@ def create_bar_chart(df, title,yaxis_title,value_type):
      # Format Y-axis ticks and data labels as percentages if value_type is 'P'
     if value_type == 'P':
         max_value = df['Values'].max()  # Assuming 'Values' holds the data you're plotting
+        # Before creating the range for tick values, check if max_value is NaN
+        if pd.isna(max_value):
+            max_value = 0  # or some other default value that makes sense for your context
+        else:
+            max_value = int(max_value)
+
         tick_values = list(range(0, int(max_value) + 1, 10))  # Change step as needed
         tick_labels = [f'{x}%' for x in tick_values]
     
