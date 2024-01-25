@@ -15,6 +15,7 @@ from dash.dash_table import DataTable, FormatTemplate
 # Assuming df is your DataFrame after loading the data from your source
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
+server=app.server
 # Make sure to change this path when you upload it to github.
 excel_file = 'Result.csv'
 df = pd.read_csv(excel_file)
