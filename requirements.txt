@@ -66,3 +66,4 @@ Werkzeug==3.0.1
 yarg==0.1.9
 yolk3k==0.9
 zipp==3.17.0
+gunicorn
