@@ -18,7 +18,7 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
 # Make sure to change this path when you upload it to github.
 excel_file = "https://raw.githubusercontent.com/sayedkhalidsultani/PolicyAndKnowledge/main/Result.csv"
-df = pd.read_excel(excel_file)
+df = pd.read_csv(excel_file)
 color_palette = [
     "#b2182b",
     "#ef8a62",
