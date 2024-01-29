@@ -18,8 +18,22 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
 # Make sure to change this path when you upload it to github.
 excel_file = "https://raw.githubusercontent.com/sayedkhalidsultani/PolicyAndKnowledge/main/Result.csv"
-df = pd.read_csv(excel_file)
-color_palette = ["#b2182b", "#ef8a62", "#fddbc7", "#d1e5f0", "#67a9cf", "#34495E"]
+df = pd.read_excel(excel_file)
+color_palette = [
+    "#b2182b",
+    "#ef8a62",
+    "#fddbc7",
+    "#d1e5f0",
+    "#67a9cf",
+    "#34495E",
+    "#FD3216",
+    "#00A08B",
+    "#A777F1",
+    "#AF0038",
+    "#565656",
+    "#778AAE",
+]
+
 app.layout = html.Div(
     [
         dbc.Spinner(
@@ -143,6 +157,9 @@ def update_bar_charts(selected_category):
     # Create a bar chart for each indicator
     charts = []
     tables = []
+
+    # Check for secondary
+
     for indicator in indicators:
         indicator_df = filtered_df[filtered_df["Indicator"] == indicator]
 
@@ -155,9 +172,13 @@ def update_bar_charts(selected_category):
 
         chart_type = indicator_df["ChartType"].iloc[0]
 
-        summary_df = indicator_df.groupby(["Indicator", "Colors"])["Values"].describe(
-            include="all"
-        )
+        # summary_df = indicator_df.groupby(["Indicator", "Colors"])["Values"].describe(
+        #     include="all"
+        # )
+
+        # Assuming summary_df is created earlier in your code
+        # Now, drop the 'Sum' column
+
         yaxis_title = indicator_df["YaxisTitle"].iloc[0]
         if pd.isna(yaxis_title):
             yaxis_title = ""
@@ -165,19 +186,45 @@ def update_bar_charts(selected_category):
         value_type = indicator_df["ValueType"].iloc[0]  # Extracting the ValueType
         # Check for secondary chart requirement
         secondary_df = indicator_df[indicator_df["xSecondary"].notnull()]
-        if not secondary_df.empty:
-            barvalues = indicator_df[indicator_df["xSecondary"] == "B"]
-            linevalues = indicator_df[indicator_df["xSecondary"] == "L"]
+        xsecondary = indicator_df["xSecondary"].iloc[0]
 
-            fig = create_bar_chart(barvalues, indicator, yaxis_title, value_type)
-            add_secondary_chart(fig, linevalues, "Line")
+        if not secondary_df.empty:
+            if chart_type == "Line":
+                LineBasevalues = indicator_df[indicator_df["xSecondary"] == "B"]
+                lineSecondaryvalues = indicator_df[indicator_df["xSecondary"] == "L"]
+                fig = create_line_chart(
+                    LineBasevalues, indicator, yaxis_title, color_palette=color_palette
+                )
+                fig = create_line_chart(
+                    lineSecondaryvalues, indicator, yaxis_title, secondary=True, fig=fig
+                )
+            else:
+                barvalues = indicator_df[indicator_df["xSecondary"] == "B"]
+                linevalues = indicator_df[indicator_df["xSecondary"] == "L"]
+                fig = create_bar_chart(
+                    barvalues, indicator, yaxis_title, value_type, Stacked=False
+                )
+                fig = create_line_chart(
+                    linevalues, indicator, yaxis_title, secondary=True, fig=fig
+                )
 
         else:
             if chart_type == "Bar":
-                fig = create_bar_chart(indicator_df, indicator, yaxis_title, value_type)
+                fig = create_bar_chart(
+                    indicator_df, indicator, yaxis_title, value_type, Stacked=False
+                )
+            elif chart_type == "StackedBar":  # Add support for Horizontal Bar chart
+                fig = create_bar_chart(
+                    indicator_df, indicator, yaxis_title, value_type, Stacked=True
+                )
             elif chart_type == "HBar":  # Add support for Horizontal Bar chart
                 fig = create_bar_chart(
-                    indicator_df, indicator, yaxis_title, value_type, horizontal=True
+                    indicator_df,
+                    indicator,
+                    yaxis_title,
+                    value_type,
+                    horizontal=True,
+                    Stacked=False,
                 )
             elif chart_type == "Table":
                 table_header = html.Label(
@@ -232,7 +279,7 @@ def update_bar_charts(selected_category):
                     if year != "Xcolumns"
                 ]
 
-                # Create the data table component
+                # Summary table
 
                 data_table = DataTable(
                     id=f"table-{indicator}",
@@ -257,7 +304,10 @@ def update_bar_charts(selected_category):
             # Append the data table to the charts
             #   charts.append(html.Div([data_table]))
             if chart_type == "Line":
-                fig = create_line_chart(indicator_df, indicator, yaxis_title)
+                # fig = create_line_chart(indicator_df, indicator, yaxis_title)
+                fig = create_line_chart(
+                    indicator_df, indicator, yaxis_title, color_palette=color_palette
+                )
 
         # Append the figure wrapped in a dcc.Graph component to the list of charts
         graph_with_border = html.Div(
@@ -280,79 +330,81 @@ def update_bar_charts(selected_category):
         # Append tables at the end of the charts
         # charts.extend(tables)
 
-        # Create a custom aggregation function
-        def custom_agg(group):
-            # To Exclude sum for rows containing Avg
-            if "Avg" in group["Xcolumns"].iloc[0]:
-                return ""  # Return a blank string for rows with 'Avg'
-            if (
-                group["ValueType"].iloc[0] == "P"
-            ):  # Check if the group is for percentages
-                # Sum the values after converting to float, divide by 100, and then multiply by 100
-                total_sum = indicator_df["Values"].sum()
-                percentage = (group["Values"].astype(float).sum() / total_sum) * 100
-                return round(percentage, 2)  # Round the
-            else:
-                sum_value = group["Values"].sum()
-                return round(sum_value, 2)
+        # # Create a custom aggregation function
+        # def custom_agg(group):
+        #     # To Exclude sum for rows containing Avg
+        #     if "Avg" in str(group["Xcolumns"].iloc[0]):
+        #         return ""  # Return a blank string for rows with 'Avg'
+        #     if (
+        #         group["ValueType"].iloc[0] == "P"
+        #     ):  # Check if the group is for percentages
+        #         # Sum the values after converting to float, divide by 100, and then multiply by 100
+        #         total_sum = indicator_df["Values"].sum()
+        #         percentage = (group["Values"].astype(float).sum() / total_sum) * 100
+        #         return round(percentage, 2)  # Round the
+        #     else:
+        #         sum_value = group["Values"].sum()
+        #         return round(sum_value, 2)
 
-        # indicator_df = filtered_df[filtered_df['Indicator'] == indicator]
-        # Check if 'xSecondary' column has any non-null values
-        secondary_df = indicator_df[indicator_df["xSecondary"].notnull()]
-        if not secondary_df.empty:
-            indicator_df = indicator_df[indicator_df["xSecondary"].str.contains("B")]
-            summary_df = indicator_df.groupby("Year").apply(custom_agg).reset_index()
-            summary_df.columns = ["Year", "Sum"]
-        else:
-            summary_df = (
-                indicator_df.groupby("Xcolumns", sort=False)
-                .apply(custom_agg)
-                .reset_index()
-            )
-            summary_df.columns = [
-                "Xcolumns",
-                "Sum" if indicator_df["ValueType"].iloc[0] != "P" else "Percentage",
-            ]
+        # # indicator_df = filtered_df[filtered_df['Indicator'] == indicator]
+        # # Check if 'xSecondary' column has any non-null values
+        # secondary_df = indicator_df[indicator_df["xSecondary"].notnull()]
+        # if not secondary_df.empty:
+        #     indicator_df = indicator_df[indicator_df["xSecondary"].str.contains("B")]
+        #     summary_df = indicator_df.groupby("Year").apply(custom_agg).reset_index()
+        #     summary_df.columns = ["Year", "Sum"]
+        # else:
+        #     summary_df = (
+        #         indicator_df.groupby("Xcolumns", sort=False)
+        #         .apply(custom_agg)
+        #         .reset_index()
+        #     )
+        #     summary_df.columns = [
+        #         "Xcolumns",
+        #         "Sum"
+        #         if indicator_df["ValueType"].iloc[0] != "P"
+        #         else "Percentage of Total",
+        #     ]
 
-        # Add mean, min, max calculations to summary_df
-        additional_stats = (
-            indicator_df.groupby("Xcolumns", sort=False)["Values"]
-            .agg(["mean", "min", "max"])
-            .reset_index(drop=True)
-        )
-        summary_df = pd.concat([summary_df, additional_stats], axis=1)
+        # # Add mean, min, max calculations to summary_df
+        # additional_stats = (
+        #     indicator_df.groupby("Xcolumns", sort=False)["Values"]
+        #     .agg(["mean", "min", "max"])
+        #     .reset_index(drop=True)
+        # )
+        # summary_df = pd.concat([summary_df, additional_stats], axis=1)
 
-        # Round the numerical values to two decimal places
-        summary_df = summary_df.round(2)
+        # # Round the numerical values to two decimal places
+        # summary_df = summary_df.round(2)
 
-        # summary_df.sort_values(by='Xcolumns', inplace=True)
+        # # summary_df.sort_values(by='Xcolumns', inplace=True)
 
-        # Rename the first column
-        columns = [
-            {"name": "Indicators" if i == "Xcolumns" else i, "id": i}
-            for i in summary_df.columns
-        ]
-        # Add title for each Summary
-        summary_title = html.Label(
-            f"Summary",
-            style={
-                "textAlign": "center",
-                "color": "#yourColorCode",
-                "display": "block",
-                "margin-bottom": "10px",
-            },
-        )
+        # # Rename the first column
+        # columns = [
+        #     {"name": "Indicators" if i == "Xcolumns" else i, "id": i}
+        #     for i in summary_df.columns
+        # ]
+        # # Add title for each Summary
+        # summary_title = html.Label(
+        #     f"Summary",
+        #     style={
+        #         "textAlign": "left",
+        #         "color": "#yourColorCode",
+        #         "display": "block",
+        #         "margin-bottom": "10px",
+        #     },
+        # )
 
-        table = DataTable(
-            id=f"table-{indicator}",
-            columns=columns,
-            data=summary_df.to_dict("records"),
-            style_table={"overflow": "auto", "border": "1px solid silver"},
-            style_cell={"textAlign": "left"},
-            export_format="csv",  # Enable export to CSV
-            export_headers="display",
-        )
-        charts.append(html.Div([summary_title, table]))
+        # table = DataTable(
+        #     id=f"table-{indicator}",
+        #     columns=columns,
+        #     data=summary_df.to_dict("records"),
+        #     style_table={"overflow": "auto", "border": "1px solid silver"},
+        #     style_cell={"textAlign": "left"},
+        #     # export_format="csv",  # Enable export to CSV
+        #     # export_headers="display",
+        # )
+        # charts.append(html.Div([summary_title, table]))
 
     return charts
 
@@ -360,8 +412,14 @@ def update_bar_charts(selected_category):
 # New Code
 
 
-def create_bar_chart(df, title, yaxis_title, value_type, horizontal=False):
+def create_bar_chart(
+    df, title, yaxis_title, value_type, horizontal=False, Stacked=False
+):
     df["Xcolumns"] = df["Xcolumns"].astype(str)
+
+    show_legend = bool(
+        len(df["Colors"].unique()) > 1 or df["xSecondary"].notnull().any()
+    )
 
     if horizontal:
         fig = px.bar(
@@ -374,7 +432,9 @@ def create_bar_chart(df, title, yaxis_title, value_type, horizontal=False):
             orientation="h",
             color_discrete_sequence=color_palette,
             text="Values",
+            # hover_data={"PercentageChange": ":.2f"},
         )
+        fig.update_traces(base=0)
 
         # Format the axes and layout
         fig.update_layout(
@@ -382,6 +442,7 @@ def create_bar_chart(df, title, yaxis_title, value_type, horizontal=False):
                 title="",  # Set the y-axis title to blank
                 type="category",  # This forces the y-axis to be treated as categorical
                 showticklabels=True,  # Ensure that Y-axis tick labels are shown
+                autorange="reversed",
             ),
             legend=dict(
                 orientation="h",
@@ -400,22 +461,22 @@ def create_bar_chart(df, title, yaxis_title, value_type, horizontal=False):
             },
         )
         # Fixing X Axis
-        if value_type == "P":
-            # Set tick values for percentage
-            tick_values = list(range(0, 101, 10))
-            tick_labels = [f"{x}%" for x in tick_values]
-            fig.update_layout(
-                xaxis=dict(
-                    tickmode="array",
-                    tickvals=tick_values,
-                    ticktext=tick_labels,
-                    range=[0, 100],
-                ),
-            )
+        # if value_type == "P":
+        #     # Set tick values for percentage
+        #     tick_values = list(range(0, 101, 10))
+        #     tick_labels = [f"{x}%" for x in tick_values]
+        #     fig.update_layout(
+        #         xaxis=dict(
+        #             tickmode="array",
+        #             tickvals=tick_values,
+        #             ticktext=tick_labels,
+        #             range=[0, 100],
+        #         ),
+        #         yaxis=dict(title=""),
+        #     )
 
         # for trace in fig.data:
         #     trace.y = df['Xcolumns']
-
     else:
         fig = px.bar(
             df,
@@ -424,9 +485,10 @@ def create_bar_chart(df, title, yaxis_title, value_type, horizontal=False):
             color="Colors",
             title=title,
             labels={"Xcolumns": "Category", "Values": "Value", "Colors": "Year"},
-            barmode="group",
             color_discrete_sequence=color_palette,
             text="Values",
+            barmode="stack" if Stacked else "group",
+            hover_data={"PercentageChange": ":.2f"},
         )
 
     if value_type == "P":
@@ -435,8 +497,9 @@ def create_bar_chart(df, title, yaxis_title, value_type, horizontal=False):
         )
     else:
         fig.update_traces(
-            texttemplate="{text}",  # Add N to the bar labels
+            texttemplate="%{text:.2f}",  # Add N to the bar labels
         )
+
     fig.update_layout(
         legend_title_text="",
         xaxis_title="",
@@ -447,6 +510,21 @@ def create_bar_chart(df, title, yaxis_title, value_type, horizontal=False):
             xanchor="center",
             x=0.5,
         ),
+        yaxis=dict(
+            visible=False
+            if df["ChartType"].iloc[0] == "StackedBar"
+            else True,  # Hide y-axis for StackedBar
+            title="",
+        ),
+        title={
+            "text": title,
+            "y": 0.9,
+            "x": 0.5,
+            "xanchor": "center",
+            "yanchor": "top",
+            "font": {"size": 14},
+        },
+        showlegend=show_legend,
     )
 
     # Format Y-axis ticks and data labels as percentages if value_type is 'P'
@@ -468,88 +546,93 @@ def create_bar_chart(df, title, yaxis_title, value_type, horizontal=False):
     else:  # Handling for numerical values (value_type='N')
         # Format Y-axis and bar labels as numbers with a thousand separator
         fig.update_traces(
-            texttemplate="%{y:,.0f}"  # Add thousand separator to bar labels
+            texttemplate="%{y:,.1f}"  # Add thousand separator to bar labels
         )
 
     return fig
 
 
-def create_line_chart(df, title, yaxis_title):
-    fig = go.Figure()
+# Create LineChart
+
+
+def create_line_chart(
+    df, title, yaxis_title, secondary=False, fig=None, color_palette=None
+):
+    # Initialize figure for primary chart, use existing figure for secondary chart
+    if not secondary or fig is None:
+        fig = go.Figure()
+
     # Add a scatter plot trace for each 'Colors' group
     for color in df["Colors"].unique():
         df_by_color = df[df["Colors"] == color]
-        fig.add_trace(
-            go.Scatter(
-                x=df_by_color["Xcolumns"],
-                y=df_by_color["Values"],
-                mode="lines+markers",  # Combine lines, markers, and text
-                name=color,  # Use color for the legend name
-                # text=df_by_color['Values'],  # Display values as text
-                # textposition='bottom center',  # Position the text above markers
-            )
+        df_by_color["PercentageChange"] = df_by_color["PercentageChange"].map(
+            "{:.2f}%".format
         )
 
-    # Update the layout of the figureclear
-    fig.update_layout(
-        title={
-            "text": title,
-            "y": 0.9,
-            "x": 0.5,
-            "xanchor": "center",
-            "yanchor": "top",
-            "font": {"size": 14},
-        },
-        showlegend=True,
-        legend_title_text="",
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=-0.5,  # Adjust if necessary
-            xanchor="center",
-            x=0.5,
-        ),
-        xaxis_title="",  # Optionally hide the x-axis title
-        yaxis_title=yaxis_title,  # Optionally hide the y-axis title
-    )
+        trace_properties = dict(
+            x=df_by_color["Xcolumns"].astype(str),
+            y=df_by_color["Values"],
+            mode="lines+markers",
+            name=color,
+            # text=df_by_color["PercentageChange"],
+            # hovertemplate="<b>%{x}</b><br>Amount: %{y}<br>Change: %{text}<extra></extra>",
+        )
+
+        if secondary:
+            trace_properties.update(yaxis="y2")
+
+        fig.add_trace(go.Scatter(**trace_properties))
+
+    # Buffer logic
+    min_y = df["Values"].min()
+    max_y = df["Values"].max()
+    range_y = max_y - min_y
+    buffer = 0.1 * range_y  # 10% buffer
+
+    yaxis_range = [min_y - buffer, max_y + buffer]
+
+    # Update layout
+    if not secondary:
+        fig.update_layout(
+            title={
+                "text": title,
+                "y": 0.9,
+                "x": 0.5,
+                "xanchor": "center",
+                "yanchor": "top",
+                "font": {"size": 14},
+            },
+            yaxis=dict(range=yaxis_range),
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=-0.5,  # Adjust this value to move the legend up or down
+                xanchor="center",
+                x=0.5,
+            ),
+        )
+    else:
+        fig.update_layout(
+            yaxis2=dict(
+                title="",
+                overlaying="y",
+                side="right",
+                anchor="x",
+                range=yaxis_range,
+                showgrid=False,
+            ),
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=-0.5,  # Adjust this value to move the legend up or down
+                xanchor="center",
+                x=0.5,
+            ),
+        )
+
+    # Buffer logic and layout updates (as previously defined)
 
     return fig
-
-
-def add_secondary_chart(fig, df, secondary_chart_type):
-    if secondary_chart_type == "Line":
-        for color in df["Colors"].unique():
-            secondary_color_df = df[df["Colors"] == color]
-            fig.add_trace(
-                go.Scatter(
-                    x=secondary_color_df["Xcolumns"],
-                    y=secondary_color_df["Values"],
-                    mode="lines+markers+text",
-                    line=dict(dash="dash"),
-                    name="Total",
-                    text=secondary_color_df["Values"],
-                    textposition="top center",
-                )
-            )
-    elif secondary_chart_type == "Bar":
-        df["Colors"] = df["Colors"].astype(str)
-        color_mapping = {
-            color: palette
-            for color, palette in zip(df["Colors"].unique(), color_palette)
-        }
-        for color in df["Colors"].unique():
-            secondary_color_df = df[df["Colors"] == color]
-            fig.add_trace(
-                go.Bar(
-                    x=secondary_color_df["Xcolumns"],
-                    y=secondary_color_df["Values"],
-                    name=f"Secondary - {color}",
-                    marker=dict(color=color_mapping[color]),  # Use color mapping,
-                    text=secondary_color_df["Values"],
-                    textposition="outside",
-                )
-            )
-        fig.update_layout(barmode="group")
 
 
 if __name__ == "__main__":
