@@ -6,9 +6,9 @@ import pandas as pd
 import dash_bootstrap_components as dbc
 import plotly.graph_objs as go
 from dash.dash_table import DataTable
-import numpy as np
-from dash.dash_table.Format import Format, Scheme
-from dash.dash_table import DataTable, FormatTemplate
+import requests
+from plotly.subplots import make_subplots
+import math
 
 # Sample DataFrame (replace this with your dynamic data source)
 # Assuming df is your DataFrame after loading the data from your source
@@ -33,56 +33,106 @@ color_palette = [
     "#778AAE",
 ]
 
+
+# Function to create the choropleth map figure
+def create_choropleth_map(df, geojson, color_discrete_map, selected_year=None):
+    df["Province"] = df["Xcolumns"]
+    Indicator = df["Indicator"].iloc[0]
+
+    if selected_year is not None:
+        df = df[df["Year"] == selected_year]
+    fig = px.choropleth_mapbox(
+        df,
+        geojson=geojson,
+        color="MapCategory",
+        locations="Province",
+        featureidkey="properties.Province",
+        center={"lat": 34.634817, "lon": 66.342506},
+        mapbox_style="white-bg",
+        zoom=5,
+        color_discrete_map=color_discrete_map,
+        height=920,
+        hover_data={"Values": True},
+    )
+
+    fig.update_layout(
+        legend=dict(
+            orientation="h",  # Horizontal orientation
+            yanchor="bottom",
+            y=-0.5,  # Moves the legend below the chart
+            xanchor="center",
+            x=0.5,  # Centers the legend
+            title="",
+        ),
+        title={
+            "text": Indicator,
+            "y": 0.9,
+            "x": 0.5,
+            "xanchor": "center",
+            "yanchor": "top",
+        },
+        title_font=dict(size=14),
+    )
+
+    return fig
+
+
 app.layout = html.Div(
     [
-        dbc.Spinner(
-            html.Div(id="loading-output"),
-            spinner_style={"width": "3rem", "height": "3rem"},
-            color="primary",
-            fullscreen=True,
-        ),
-        dbc.Container(
-            [
-                dbc.Row(
-                    dbc.Col(html.H3("Policy And Knowledge Unit"), width=12),
-                    justify="center",
-                ),
-                dbc.Row(
-                    dbc.Col(
-                        [
-                            dcc.Dropdown(
-                                id="category-dropdown",
-                                options=[
-                                    {
-                                        "label": str(i) if i else "Default",
-                                        "value": str(i) if i else "Default",
-                                    }
-                                    for i in df["Category"].dropna().unique()
-                                ],
-                                value=str(df["Category"].dropna().unique()[0]),
-                            ),
-                            html.Div(
+        dcc.Loading(
+            id="loading-map",
+            type="default",  # You can choose the loader style
+            children=[
+                dbc.Container(
+                    [
+                        dbc.Row(
+                            dbc.Col(html.H3("Policy And Knowledge Unit"), width=12),
+                            justify="center",
+                        ),
+                        dbc.Row(
+                            dbc.Col(
                                 [
-                                    dbc.Row(
-                                        [dbc.Col(html.Div(id="charts-ouput"), width=12)]
-                                    )
+                                    dcc.Dropdown(
+                                        id="category-dropdown",
+                                        options=[
+                                            {
+                                                "label": str(i) if i else "Default",
+                                                "value": str(i) if i else "Default",
+                                            }
+                                            for i in df["Category"].dropna().unique()
+                                        ],
+                                        value=str(df["Category"].dropna().unique()[0]),
+                                    ),
+                                    html.Div(
+                                        [
+                                            dbc.Row(
+                                                [
+                                                    dbc.Col(
+                                                        html.Div(id="charts-ouput"),
+                                                        width=12,
+                                                    )
+                                                ]
+                                            )
+                                        ],
+                                        id="charts-container",
+                                    ),
                                 ],
-                                id="charts-container",
+                                width=12,
                             ),
-                        ],
-                        width=12,
-                    ),
-                    justify="center",
+                            justify="center",
+                        ),
+                        dbc.Row(dbc.Col(html.H6(""), width=12), justify="right"),
+                    ],
+                    style={
+                        "maxWidth": "1024px",
+                        "margin": "10px auto",
+                        "border": "1px solid silver",
+                        "background": "white",
+                        "padding-bottom": "20px",
+                    },
                 ),
-                dbc.Row(dbc.Col(html.H6(""), width=12), justify="right"),
             ],
-            style={
-                "maxWidth": "1024px",
-                "margin": "10px auto",
-                "border": "1px solid silver",
-                "background": "white",
-                "padding-bottom": "20px",
-            },
+            style={"width": "80%", "margin": "auto", "position": "relative"},
         ),
     ],
     style={
@@ -99,37 +149,72 @@ app.layout = html.Div(
 def update_bar_charts(selected_category):
     # Filter the DataFrame based on selected category
     filtered_df = df[df["Category"] == selected_category].copy()
+
+    # Fetch and load the GeoJSON data
+    geojson_url = "https://raw.githubusercontent.com/sayedkhalidsultani/ShapFiles/main/Province.json"
+    geojson_response = requests.get(geojson_url)
+    geojson = geojson_response.json()
+
+    # Mapping Starts Here
+    def categorize_value(value):
+        if value <= step:
+            return "0-{}".format(step)
+        elif value <= 2 * step:
+            return "{}-{}".format(step, 2 * step)
+        elif value <= 3 * step:
+            return "{}-{}".format(2 * step, 3 * step)
+        else:
+            return ">{}".format(3 * step)
+
     filtered_df.sort_values(by=["SortOrder", "Indicator"], inplace=True)
 
     # Ensure 'Colors' is treated as categorical data for grouping
     filtered_df["Colors"] = filtered_df["Colors"].astype(str)
 
-    # Get a list of all indicators for the selected category
-    df["Indicator"] = df["Indicator"].str.strip()
+    # # Get a list of all indicators for the selected category
+    # df["Indicator"] = df["Indicator"].str.strip()
 
     indicators = filtered_df["Indicator"].unique()
 
     # Create a bar chart for each indicator
     charts = []
-    tables = []
 
     def truncate_to_two_decimals(x):
-        if isinstance(x, float):
-            # Convert to string and split at the decimal point
-            integer_part, decimal_part = str(x).split(".")
-            # Truncate the decimal part and reform the number
-            truncated = f"{integer_part}.{decimal_part[:2]}"
-            return float(truncated)
+        if isinstance(x, float) and not math.isnan(x):
+            return int(x * 100) / 100.0
         else:
-            # Return the original value if it's not a float
             return x
+
+    # if isinstance(x, float):
+    #     # Convert to string and split at the decimal point
+    #     integer_part, decimal_part = str(x).split(".")
+    #     # Truncate the decimal part and reform the number
+    #     truncated = f"{integer_part}.{decimal_part[:2]}"
+    #     return float(truncated)
+    # else:
+    #     # Return the original value if it's not a float
+    #     return x
 
     df["Values"] = df["Values"].apply(truncate_to_two_decimals)
 
     # Check for secondary
 
     for indicator in indicators:
+        tables = []
         indicator_df = filtered_df[filtered_df["Indicator"] == indicator]
+
+        # Maps
+
+        max_value = indicator_df["Values"].max()
+        step = (max_value // 3) + 1
+        color_map = {
+            "0-{}".format(step): "#e34a33",
+            "{}-{}".format(step, 2 * step): "#fdbb84",
+            "{}-{}".format(2 * step, 3 * step): "#fee08b",
+            ">{}".format(3 * step): "#31a354",
+        }
+
+        indicator_df["MapCategory"] = indicator_df["Values"].apply(categorize_value)
 
         indicator_df["SortOrder"] = indicator_df["SortOrder"].fillna(0.0)
 
@@ -148,7 +233,7 @@ def update_bar_charts(selected_category):
         # Check for secondary chart requirement
         secondary_df = indicator_df[indicator_df["xSecondary"].notnull()]
         xsecondary = indicator_df["xSecondary"].iloc[0]
-
+        isPivot = indicator_df["ISPivot"].iloc[0]
         if not secondary_df.empty:
             if chart_type == "Line":
                 LineBasevalues = indicator_df[indicator_df["xSecondary"] == "B"]
@@ -197,45 +282,195 @@ def update_bar_charts(selected_category):
                 )
 
             elif chart_type == "Table":
-                indicator_value = indicator_df["Indicator"].iloc[0]
-                table_title = html.Label(
-                    f"{indicator}",
-                    style={
-                        "textAlign": "center",
-                        "fontSize": "14px",
-                        "display": "block",
-                        "margin-top": "10px",
-                        "margin-bottom": "10px",
-                    },  # Add styling here
-                )  #
+                isPivot = indicator_df["ISPivot"].iloc[0]
 
-                # Create a dynamic header based on the DataFrame
-                header = create_dynamic_header(indicator_df)
+                Indicator = indicator_df["Indicator"].iloc[0]
+                if isPivot == 1:
 
-                pivot_df = indicator_df.pivot(
-                    index="Xcolumns", columns="Year", values="Values"
-                )
-                pivot_df.reset_index(inplace=True)
-                dynamicTable = html.Div(
+                    header = create_dynamic_header(indicator_df)
+
+                    pivot_df = indicator_df.pivot(
+                        index="Xcolumns", columns="Year", values="Values"
+                    )
+                    pivot_df.reset_index(inplace=True)
+
+                    dynamicTable1 = html.Div(
+                        [
+                            html.Label(
+                                Indicator,
+                                style={
+                                    "textAlign": "center",
+                                    "display": "block",
+                                    "margin-bottom": "10px",
+                                },
+                            ),
+                            DataTable(
+                                id="test2",
+                                columns=header,
+                                data=pivot_df.to_dict("records"),
+                                merge_duplicate_headers=True,
+                                # style_header={"textAlign": "center"},
+                                style_data={"textAlign": "center"},
+                                style_cell_conditional=[
+                                    {
+                                        "if": {
+                                            "column_id": "index"
+                                        },  # Assuming 'index' is the ID for your first column
+                                        "textAlign": "left",  # Align text to left for the first column
+                                    }
+                                ],
+                            ),
+                        ],
+                        style={
+                            "border": "1px solid silver",  # Adding a 1px solid border
+                            "padding": "10px",
+                            "margin-top": "10px",
+                            "margin-bottom": "10px",  # Optional: Adds space between charts
+                        },
+                    )
+                    tables.append(dynamicTable1)
+                elif isPivot == 2:
+                    #     # Create a pd.MultiIndex from the unique values of 'Colors' and 'SubHeader'
+                    Indicator = indicator_df["Indicator"].iloc[0]
+                    FirstColumnTitle = indicator_df["FirstColumnHeader"].iloc[0]
+
+                    multi_index = pd.MultiIndex.from_product(
+                        [
+                            indicator_df["Colors"].unique(),
+                            indicator_df["SubHeader"].unique(),
+                        ],
+                        names=["Colors", "SubHeader"],
+                    )
+                    df2 = pd.DataFrame(
+                        index=indicator_df["Xcolumns"].unique(), columns=multi_index
+                    ).sort_index()
+
+                    for row in indicator_df.itertuples():
+                        df2.loc[row.Xcolumns, (row.Colors, row.SubHeader)] = row.Values
+
+                    data_for_dash = convert_df_to_dict(df2)
+
+                    columns = [
+                        {
+                            "name": "",
+                            "id": "index",
+                        }
+                    ] + [
+                        {"name": [x1, x2], "id": f"{x1}_{x2}"}
+                        for x1, x2 in df2.columns
+                        if x2
+                    ]
+
+                    dynamicTable = html.Div(
+                        [
+                            html.Label(
+                                Indicator,
+                                style={
+                                    "textAlign": "center",
+                                    "display": "block",
+                                    "margin-bottom": "10px",
+                                },
+                            ),
+                            DataTable(
+                                id="table",
+                                columns=columns,
+                                data=data_for_dash,
+                                merge_duplicate_headers=True,
+                                # style_header={"textAlign": "center"},
+                                style_data={"textAlign": "center"},
+                                style_cell_conditional=[
+                                    {
+                                        "if": {
+                                            "column_id": "index"
+                                        },  # Assuming 'index' is the ID for your first column
+                                        "textAlign": "left",  # Align text to left for the first column
+                                    }
+                                ],
+                            ),
+                        ],
+                        style={
+                            "border": "1px solid silver",  # Adding a 1px solid border
+                            "padding": "10px",
+                            "margin-top": "10px",
+                            "margin-bottom": "10px",  # Optional: Adds space between charts
+                        },
+                    )
+                    tables.append(dynamicTable)
+                else:
+                    indicator_df = indicator_df[
+                        ["Xcolumns", "Colors", "Values", "FirstColumnHeader"]
+                    ]
+                    FirstColumnTitle = indicator_df["FirstColumnHeader"].iloc[0]
+
+                    pivot_df = indicator_df.pivot(
+                        index="Xcolumns", columns="Colors", values="Values"
+                    )
+
+                    pivot_df.reset_index(inplace=True)
+                    pivot_df.rename(
+                        columns={"Xcolumns": FirstColumnTitle}, inplace=True
+                    )
+
+                    FixedColumnTable = html.Div(
+                        [
+                            html.Label(
+                                Indicator,
+                                style={
+                                    "textAlign": "center",
+                                    "display": "block",
+                                    "margin-bottom": "10px",
+                                },
+                            ),
+                            DataTable(
+                                id=indicator,
+                                columns=[
+                                    {"name": col, "id": col} for col in pivot_df.columns
+                                ],
+                                data=pivot_df.to_dict("records"),
+                                # style_header={"textAlign": "center"},
+                                style_data={"textAlign": "center"},
+                                style_cell_conditional=[
+                                    {
+                                        "if": {
+                                            "column_id": "index"
+                                        },  # Assuming 'index' is the ID for your first column
+                                        "textAlign": "left",  # Align text to left for the first column
+                                    }
+                                ],
+                            ),
+                        ],
+                        style={
+                            "border": "1px solid silver",  # Adding a 1px solid border
+                            "padding": "10px",
+                            "margin-top": "10px",
+                            "margin-bottom": "10px",  # Optional: Adds space between charts
+                        },
+                    )
+                    tables.append(FixedColumnTable)
+
+            elif chart_type == "Map":
+                MapYear = indicator_df["Year"].iloc[0]
+
+                fig = create_choropleth_map(indicator_df, geojson, color_map, MapYear)
+
+            elif chart_type == "Cart":
+                cards = [
+                    create_indicator_card(row["Xcolumns"], row["Values"])
+                    for _, row in indicator_df.iterrows()
+                ]
+                # Organize cards in a row
+
+                cards_layout = html.Div(
                     [
-                        table_title,
-                        DataTable(
-                            id="table-multicolumn",
-                            columns=header,
-                            data=pivot_df.to_dict("records"),
-                            merge_duplicate_headers=True,  # Merge headers visually
-                            # Additional settings
-                            style_cell={"textAlign": "center"},
-                            style_header={
-                                "backgroundColor": "rgb(230, 230, 230)",
-                                "font-size": "14px",
-                            },
-                            style_data={
-                                "whiteSpace": "normal",
-                                "height": "auto",
-                                "font-size": "14px",
+                        html.Label(
+                            indicator,
+                            style={
+                                "textAlign": "center",
+                                "display": "block",
+                                "margin-bottom": "10px",
                             },
                         ),
+                        dbc.Row([dbc.Col(card) for card in cards], className="mb-4"),
                     ],
                     style={
                         "border": "1px solid silver",  # Adding a 1px solid border
@@ -244,9 +479,51 @@ def update_bar_charts(selected_category):
                         "margin-bottom": "10px",  # Optional: Adds space between charts
                     },
                 )
+            elif chart_type == "MultiPieChart":
+                years = indicator_df["Year"].unique()
+                # Determine the layout for subplots
+                rows = 1  # Adjust based on your preference
+                cols = len(years)  # One column for each year
+
+                # Create subplot figure
+                fig = make_subplots(
+                    rows=rows,
+                    cols=cols,
+                    specs=[[{"type": "pie"}] * cols],
+                    subplot_titles=[str(year) for year in years],
+                )
+
+                for i, year in enumerate(years, start=1):
+                    # Filter the DataFrame for the current year
+                    df_filtered = indicator_df[indicator_df["Year"] == year]
+
+                    # Create the pie chart for the current year
+                    fig.add_trace(
+                        go.Pie(
+                            labels=df_filtered["Xcolumns"],
+                            values=df_filtered["Values"],
+                            name=str(year),
+                        ),
+                        row=1,
+                        col=i,
+                    )
+                    fig.update_layout(
+                        title_text=indicator,
+                        title_x=0.5,
+                        legend=dict(
+                            orientation="h",
+                            yanchor="bottom",
+                            y=-0.5,
+                            xanchor="center",
+                            x=0.5,
+                        ),
+                    )
 
         if chart_type == "Table":
-            charts.append(dynamicTable)
+            charts.extend(tables)
+        elif chart_type == "Cart":
+            charts.append(cards_layout)
+
         else:
             # Append the figure wrapped in a dcc.Graph component to the list of charts
             graph_with_border = html.Div(
@@ -264,6 +541,43 @@ def update_bar_charts(selected_category):
 
 
 # New Code
+
+
+def convert_df_to_dict(df):
+    # Reset the index to include it as a regular column
+    df_reset = df.reset_index()
+
+    # Create a list of dictionaries from the DataFrame rows
+    dict_list = df_reset.to_dict("records")
+
+    # Modify the keys in each dictionary to match the DataTable format
+    formatted_dict_list = []
+    for record in dict_list:
+        formatted_record = {}
+        for key, value in record.items():
+            if isinstance(key, tuple):
+                # Convert tuple to a string ID that matches the DataTable format
+                # Handle both single-level and MultiIndex columns
+                new_key = "_".join(str(item) for item in key if item)
+                formatted_record[new_key] = value
+            else:
+                # Handle regular columns
+                formatted_record[key] = value
+        formatted_dict_list.append(formatted_record)
+
+    return formatted_dict_list
+
+    single_array = []
+
+    for _, row in df.iterrows():
+        # First array with 'Xcolumns' and its value
+        single_array.append(["Xcolumns", row["Xcolumns"]])
+
+        # Second array with concatenated 'Indicator', 'Xcolumns', and 'Colors' values and the 'Values' data
+        combined_string = f"{row['Xcolumns']}{row['SubHeader']}{row['Colors']}"
+        single_array.append([combined_string, row["Values"]])
+
+    return single_array
 
 
 def create_dynamic_header(df):
@@ -320,9 +634,9 @@ def create_bar_chart(
     fig.update_traces(texttemplate=text)
 
     yaxis_config = dict(
-        visible=False
-        if df["ChartType"].iloc[0] == "StackedBar"
-        else True,  # Hide y-axis for StackedBar
+        visible=(
+            False if df["ChartType"].iloc[0] == "StackedBar" else True
+        ),  # Hide y-axis for StackedBar
         title="",
         type="category" if horizontal else "linear",
         autorange="reversed" if horizontal else True,
@@ -440,6 +754,30 @@ def create_line_chart(
     # Buffer logic and layout updates (as previously defined)
 
     return fig
+
+
+# Creating Cards
+def create_indicator_card(title, value):
+    formatted_value = format_number_with_thousands_separator(value)
+    card = dbc.Card(
+        [
+            dbc.CardHeader(title, className="text-center"),
+            dbc.CardBody(
+                [
+                    html.Label(
+                        formatted_value, className="card-title text-center d-block"
+                    ),
+                ]
+            ),
+        ],
+        style={"width": "14rem", "margin": "10px"},  # Adjust styling as needed
+    )
+    return card
+
+
+def format_number_with_thousands_separator(number):
+    return "{:,}".format(number)
+
 
 
 if __name__ == "__main__":
