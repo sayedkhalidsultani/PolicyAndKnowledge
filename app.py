@@ -367,7 +367,7 @@ def update_bar_charts(selected_category):
                         index="Xcolumns", columns="Colors", values="Values"
                     ).reset_index()
                     pivot_df.rename(
-                        columns={"Xcolumns": "FirstColumnHeader"}, inplace=True
+                        columns={"Xcolumns": FirstColumnTitle}, inplace=True
                     )
                     columns = [{"name": col, "id": col} for col in pivot_df.columns]
                     tables.append(
