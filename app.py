@@ -283,7 +283,7 @@ def update_bar_charts(selected_category):
 
             elif chart_type == "Table":
                 isPivot = indicator_df["ISPivot"].iloc[0]
-                FirstColumnTitle = indicator_df["FirstColumnHeader"].iloc[0]
+                
                 Indicator = indicator_df["Indicator"].iloc[0]
                 if isPivot == 1:
                     headers = create_dynamic_header(indicator_df)
@@ -298,7 +298,7 @@ def update_bar_charts(selected_category):
                     )
 
                 elif isPivot == 2:
-                    
+                    FirstColumnTitle = indicator_df["FirstColumnHeader"].iloc[0]
 
                     multi_index = pd.MultiIndex.from_product(
                         [
@@ -363,6 +363,7 @@ def update_bar_charts(selected_category):
                     )
                     tables.append(dynamicTable)
                 else:
+                    FirstColumnTitle = indicator_df["FirstColumnHeader"].iloc[0]
                     pivot_df = indicator_df.pivot(
                         index="Xcolumns", columns="Colors", values="Values"
                     ).reset_index()
