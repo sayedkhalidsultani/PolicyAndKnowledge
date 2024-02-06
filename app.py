@@ -179,23 +179,23 @@ def update_bar_charts(selected_category):
     # Create a bar chart for each indicator
     charts = []
 
-    def truncate_to_two_decimals(x):
-        if isinstance(x, float) and not math.isnan(x):
-            return int(x * 100) / 100.0
-        else:
-            return x
+    # def truncate_to_two_decimals(x):
+    #     # if isinstance(x, float) and not math.isnan(x):
+    #     #     return int(x * 100) / 100.0
+    #     # else:
+    #     #     return x
 
-    # if isinstance(x, float):
-    #     # Convert to string and split at the decimal point
-    #     integer_part, decimal_part = str(x).split(".")
-    #     # Truncate the decimal part and reform the number
-    #     truncated = f"{integer_part}.{decimal_part[:2]}"
-    #     return float(truncated)
-    # else:
-    #     # Return the original value if it's not a float
-    #     return x
+    #     if isinstance(x, float) and not math.isnan(x):
+    #         # Convert to string and split at the decimal point
+    #         integer_part, decimal_part = str(x).split(".")
+    #         # Truncate the decimal part and reform the number
+    #         truncated = f"{integer_part}.{decimal_part[:2]}"
+    #         return float(truncated)
+    #     else:
+    #         # Return the original value if it's not a float
+    #         return x
 
-    df["Values"] = df["Values"].apply(truncate_to_two_decimals)
+    # df["Values"] = df["Values"].apply(truncate_to_two_decimals)
 
     # Check for secondary
 
@@ -286,52 +286,18 @@ def update_bar_charts(selected_category):
 
                 Indicator = indicator_df["Indicator"].iloc[0]
                 if isPivot == 1:
-
-                    header = create_dynamic_header(indicator_df)
-
+                    headers = create_dynamic_header(indicator_df)
                     pivot_df = indicator_df.pivot(
-                        index="Xcolumns", columns="Year", values="Values"
+                        index="Xcolumns", columns="Colors", values="Values"
+                    ).reset_index()
+                    columns = [{"name": i, "id": i} for i in pivot_df.columns]
+                    tables.append(
+                        create_table_with_subheader(
+                            indicator, headers, pivot_df.to_dict("records"), "table1"
+                        )
                     )
-                    pivot_df.reset_index(inplace=True)
 
-                    dynamicTable1 = html.Div(
-                        [
-                            html.Label(
-                                Indicator,
-                                style={
-                                    "textAlign": "center",
-                                    "display": "block",
-                                    "margin-bottom": "10px",
-                                },
-                            ),
-                            DataTable(
-                                id="test2",
-                                columns=header,
-                                data=pivot_df.to_dict("records"),
-                                merge_duplicate_headers=True,
-                                # style_header={"textAlign": "center"},
-                                style_data={"textAlign": "center"},
-                                style_cell_conditional=[
-                                    {
-                                        "if": {
-                                            "column_id": "index"
-                                        },  # Assuming 'index' is the ID for your first column
-                                        "textAlign": "left",  # Align text to left for the first column
-                                    }
-                                ],
-                            ),
-                        ],
-                        style={
-                            "border": "1px solid silver",  # Adding a 1px solid border
-                            "padding": "10px",
-                            "margin-top": "10px",
-                            "margin-bottom": "10px",  # Optional: Adds space between charts
-                        },
-                    )
-                    tables.append(dynamicTable1)
                 elif isPivot == 2:
-                    #     # Create a pd.MultiIndex from the unique values of 'Colors' and 'SubHeader'
-                    Indicator = indicator_df["Indicator"].iloc[0]
                     FirstColumnTitle = indicator_df["FirstColumnHeader"].iloc[0]
 
                     multi_index = pd.MultiIndex.from_product(
@@ -376,7 +342,7 @@ def update_bar_charts(selected_category):
                                 columns=columns,
                                 data=data_for_dash,
                                 merge_duplicate_headers=True,
-                                # style_header={"textAlign": "center"},
+                                style_header={"textAlign": "center"},
                                 style_data={"textAlign": "center"},
                                 style_cell_conditional=[
                                     {
@@ -397,56 +363,21 @@ def update_bar_charts(selected_category):
                     )
                     tables.append(dynamicTable)
                 else:
-                    indicator_df = indicator_df[
-                        ["Xcolumns", "Colors", "Values", "FirstColumnHeader"]
-                    ]
-                    FirstColumnTitle = indicator_df["FirstColumnHeader"].iloc[0]
-
                     pivot_df = indicator_df.pivot(
                         index="Xcolumns", columns="Colors", values="Values"
-                    )
-
-                    pivot_df.reset_index(inplace=True)
+                    ).reset_index()
                     pivot_df.rename(
-                        columns={"Xcolumns": FirstColumnTitle}, inplace=True
+                        columns={"Xcolumns": "FirstColumnHeader"}, inplace=True
                     )
-
-                    FixedColumnTable = html.Div(
-                        [
-                            html.Label(
-                                Indicator,
-                                style={
-                                    "textAlign": "center",
-                                    "display": "block",
-                                    "margin-bottom": "10px",
-                                },
-                            ),
-                            DataTable(
-                                id=indicator,
-                                columns=[
-                                    {"name": col, "id": col} for col in pivot_df.columns
-                                ],
-                                data=pivot_df.to_dict("records"),
-                                # style_header={"textAlign": "center"},
-                                style_data={"textAlign": "center"},
-                                style_cell_conditional=[
-                                    {
-                                        "if": {
-                                            "column_id": "index"
-                                        },  # Assuming 'index' is the ID for your first column
-                                        "textAlign": "left",  # Align text to left for the first column
-                                    }
-                                ],
-                            ),
-                        ],
-                        style={
-                            "border": "1px solid silver",  # Adding a 1px solid border
-                            "padding": "10px",
-                            "margin-top": "10px",
-                            "margin-bottom": "10px",  # Optional: Adds space between charts
-                        },
+                    columns = [{"name": col, "id": col} for col in pivot_df.columns]
+                    tables.append(
+                        create_table_with_subheader(
+                            indicator,
+                            columns,
+                            pivot_df.to_dict("records"),
+                            "table_default",
+                        )
                     )
-                    tables.append(FixedColumnTable)
 
             elif chart_type == "Map":
                 MapYear = indicator_df["Year"].iloc[0]
@@ -490,7 +421,8 @@ def update_bar_charts(selected_category):
                     rows=rows,
                     cols=cols,
                     specs=[[{"type": "pie"}] * cols],
-                    subplot_titles=[str(year) for year in years],
+                    subplot_titles=[str(int(year)) for year in years],
+                    vertical_spacing=0.2,
                 )
 
                 for i, year in enumerate(years, start=1):
@@ -777,6 +709,55 @@ def create_indicator_card(title, value):
 
 def format_number_with_thousands_separator(number):
     return "{:,}".format(number)
+
+
+def create_table_with_subheader(indicator, headers, data, table_id):
+    """
+    Create a Dash HTML table component wrapped in a div with a label.
+
+    Parameters:
+    - indicator: The label text for the table.
+    - columns: A list of dictionaries defining the table columns.
+    - data: Data to display in the table, as a list of dictionaries.
+    - table_id: The ID to assign to the DataTable component.
+
+    Returns:
+    - A Dash html.Div component containing the label and DataTable.
+    """
+    return html.Div(
+        [
+            html.Label(
+                indicator,
+                style={
+                    "textAlign": "center",
+                    "display": "block",
+                    "margin-bottom": "10px",
+                },
+            ),
+            DataTable(
+                id=table_id,
+                columns=headers,
+                data=data,
+                merge_duplicate_headers=True,
+                style_header={"textAlign": "center"},
+                style_data={"textAlign": "center"},
+                style_cell_conditional=[
+                    {
+                        "if": {
+                            "column_id": headers[0]["id"]
+                        },  # Assuming the first column ID is accurate
+                        "textAlign": "left",
+                    }
+                ],
+            ),
+        ],
+        style={
+            "border": "1px solid silver",
+            "padding": "10px",
+            "margin-top": "10px",
+            "margin-bottom": "10px",
+        },
+    )
 
 
 
