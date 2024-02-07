@@ -59,20 +59,11 @@ def create_choropleth_map(df, geojson, color_discrete_map, selected_year=None):
         mapbox_style="white-bg",
         zoom=5,
         color_discrete_map={category: color for category, color in zip(unique_categories, color_palette)},
-        height=920,
         hover_data={"Values": True},
     )
 
     fig.update_layout(
-        dragmode=False,
-        legend=dict(
-            orientation="h",  # Horizontal orientation
-            yanchor="bottom",
-            y=-0.5,  # Moves the legend below the chart
-            xanchor="center",
-            x=0.5,  # Centers the legend
-            title="",
-        ),
+         
         title={
             "text": Indicator,
             "y": 0.9,
@@ -420,9 +411,7 @@ def update_bar_charts(selected_category):
                  fig = go.Figure(traces)
                  
                  fig.update_layout(mapbox_style="carto-positron",
-                  height=750,  # Height in pixels
-                  width=980,
-                  
+                            
                   
                   
                   mapbox=dict(
