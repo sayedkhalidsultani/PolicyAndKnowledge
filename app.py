@@ -19,26 +19,34 @@ server = app.server
 excel_file = "https://raw.githubusercontent.com/sayedkhalidsultani/PolicyAndKnowledge/main/Result.csv"
 df = pd.read_csv(excel_file)
 color_palette = [
-    "#b2182b",
+    "#9ecae1",
+    "#41ab5d",
+    "#edf8b1",
     "#ef8a62",
-    "#fddbc7",
+    "#7fcdbb",
     "#d1e5f0",
     "#67a9cf",
     "#34495E",
-    "#FD3216",
     "#00A08B",
     "#A777F1",
-    "#AF0038",
     "#565656",
     "#778AAE",
+    "#ec7014",
+    "#c6dbef",
+     "#08306b",
 ]
+
+
+# Loading Data
+
+# Map Data is Displayed Here
 
 
 # Function to create the choropleth map figure
 def create_choropleth_map(df, geojson, color_discrete_map, selected_year=None):
     df["Province"] = df["Xcolumns"]
     Indicator = df["Indicator"].iloc[0]
-
+    unique_categories = df['MapCategory'].unique()
     if selected_year is not None:
         df = df[df["Year"] == selected_year]
     fig = px.choropleth_mapbox(
@@ -50,12 +58,13 @@ def create_choropleth_map(df, geojson, color_discrete_map, selected_year=None):
         center={"lat": 34.634817, "lon": 66.342506},
         mapbox_style="white-bg",
         zoom=5,
-        color_discrete_map=color_discrete_map,
+        color_discrete_map={category: color for category, color in zip(unique_categories, color_palette)},
         height=920,
         hover_data={"Values": True},
     )
 
     fig.update_layout(
+        dragmode=False,
         legend=dict(
             orientation="h",  # Horizontal orientation
             yanchor="bottom",
@@ -70,6 +79,7 @@ def create_choropleth_map(df, geojson, color_discrete_map, selected_year=None):
             "x": 0.5,
             "xanchor": "center",
             "yanchor": "top",
+            "font": {"size": 14},
         },
         title_font=dict(size=14),
     )
@@ -283,7 +293,7 @@ def update_bar_charts(selected_category):
 
             elif chart_type == "Table":
                 isPivot = indicator_df["ISPivot"].iloc[0]
-                
+
                 Indicator = indicator_df["Indicator"].iloc[0]
                 if isPivot == 1:
                     headers = create_dynamic_header(indicator_df)
@@ -299,7 +309,6 @@ def update_bar_charts(selected_category):
 
                 elif isPivot == 2:
                     FirstColumnTitle = indicator_df["FirstColumnHeader"].iloc[0]
-
                     multi_index = pd.MultiIndex.from_product(
                         [
                             indicator_df["Colors"].unique(),
@@ -384,6 +393,70 @@ def update_bar_charts(selected_category):
                 MapYear = indicator_df["Year"].iloc[0]
 
                 fig = create_choropleth_map(indicator_df, geojson, color_map, MapYear)
+            
+            elif chart_type=='MapPoint':
+                # Assuming 'Colors' column contains categorical data
+                 unique_categories = indicator_df['Colors'].unique()
+                 category_color_map = {category: color for category, color in zip(unique_categories, color_palette)}
+
+                    # Map each category to a color
+                 indicator_df['ColorMapped'] = indicator_df['Colors'].map(category_color_map)
+
+                 traces = []
+               
+                 for category in unique_categories:
+                    df_filtered = indicator_df[indicator_df['Colors'] == category]
+                    traces.append(go.Scattermapbox(
+                        lat=df_filtered['Lat'],
+                        lon=df_filtered['Lon'],
+                        mode='markers',
+                        marker=go.scattermapbox.Marker(color=category_color_map[category]),
+                        name=category,  # This sets the legend entry
+                       
+
+                    ))
+
+                # Create the figure with all traces
+                 fig = go.Figure(traces)
+                 
+                 fig.update_layout(mapbox_style="carto-positron",
+                  
+                  mapbox=dict(
+                    center={"lat": 34.634817, "lon": 66.342506},  # Center of the map
+                    zoom=5  # Zoom level
+                ),
+                    title={
+                        "text":indicator,
+                        "y": 0.9,
+                        "x": 0.5,
+                        "xanchor": "center",
+                        "yanchor": "top",
+                        "font": {"size": 14},
+                    },legend=dict(
+      
+                    title="",
+                ))
+                    
+            elif chart_type=='TreeMap':
+                  fig = go.Figure(go.Treemap(
+                    labels=indicator_df["Xcolumns"],
+                    values=indicator_df["Values"],
+                    parents = [""] * len(indicator_df),
+                    texttemplate="<b>%{label}</b><br>%{percentRoot:.2%}",
+                    #texttemplate="<b>%{label}</b><br>Value: %{value}<br>Percentage: %{percentRoot:.2%}",
+                    marker=dict(colors=color_palette),
+                    hovertemplate='<b>%{label}</b><br>Value: %{value}<br>Percentage: %{percentParent:.2%}<extra></extra>',  # Custom hover text
+                ))
+                  fig.update_layout(
+                    title={
+                        'text': indicator,
+                        'y':0.9,
+                        'x':0.5,
+                        'xanchor': 'center',
+                        'yanchor': 'top',
+                        "font": {"size": 14},
+                    }
+                )
 
             elif chart_type == "Cart":
                 cards = [
@@ -436,6 +509,7 @@ def update_bar_charts(selected_category):
                             labels=df_filtered["Xcolumns"],
                             values=df_filtered["Values"],
                             name=str(year),
+                            marker=dict(colors=color_palette),
                         ),
                         row=1,
                         col=i,
@@ -469,6 +543,28 @@ def update_bar_charts(selected_category):
                 },
             )
             charts.append(graph_with_border)  # Add charts to the charts list
+
+    # giving UniqueID to each div
+    for index, indicator in enumerate(indicators):
+    # Your existing code to prepare the chart, e.g., fig = create_bar_chart(...)
+    # Assuming 'fig' is your Plotly figure object for the current 'indicator'
+    
+    # Generate a unique ID for the div that will contain the dcc.Graph
+        unique_div_id = f"chart-container-{indicator.replace(' ', '-').lower()}-{index}"
+        graph_id = f"graph-{indicator.replace(' ', '-').lower()}-{index}"
+
+        # Append the figure wrapped in a dcc.Graph component within a div to the list of charts
+        graph_with_border_and_unique_id = html.Div(
+            dcc.Graph(id=graph_id, figure=fig),
+            id=unique_div_id,
+            style={
+                "border": "1px solid silver",  # Optional: Adding a border for visualization
+                "padding": "10px",
+                "margin-top": "10px",
+                "margin-bottom": "10px",
+            },
+        )
+    
 
     return charts
 
