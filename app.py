@@ -420,6 +420,10 @@ def update_bar_charts(selected_category):
                  fig = go.Figure(traces)
                  
                  fig.update_layout(mapbox_style="carto-positron",
+                  height=750,  # Height in pixels
+                  width=980,
+                  
+                  
                   
                   mapbox=dict(
                     center={"lat": 34.634817, "lon": 66.342506},  # Center of the map
