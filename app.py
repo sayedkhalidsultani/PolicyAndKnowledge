@@ -59,6 +59,7 @@ def create_choropleth_map(df, geojson, color_discrete_map, selected_year=None):
         mapbox_style="white-bg",
         zoom=5,
         color_discrete_map={category: color for category, color in zip(unique_categories, color_palette)},
+        height=920,
         hover_data={"Values": True},
     )
 
