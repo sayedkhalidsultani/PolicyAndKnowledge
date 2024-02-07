@@ -64,6 +64,14 @@ def create_choropleth_map(df, geojson, color_discrete_map, selected_year=None):
     )
 
     fig.update_layout(
+          legend=dict(
+            orientation="h",  # Horizontal orientation
+            yanchor="bottom",
+            y=-0.5,  # Moves the legend below the chart
+            xanchor="center",
+            x=0.5,  # Centers the legend
+            title="",
+        ),
          
         title={
             "text": Indicator,
