@@ -43,6 +43,7 @@ def create_choropleth_map(df, geojson, color_discrete_map, selected_year=None):
     df["Province"] = df["Xcolumns"]
     Indicator = df["Indicator"].iloc[0]
     unique_categories = df['MapCategory'].unique()
+    
     if selected_year is not None:
         df = df[df["Year"] == selected_year]
     fig = px.choropleth_mapbox(
@@ -82,6 +83,17 @@ def create_choropleth_map(df, geojson, color_discrete_map, selected_year=None):
 
     return fig
 
+# Example check to ensure df is not None and "Category" column exists
+if df is not None and "Category" in df.columns:
+    unique_categories = df["Category"].dropna().unique()
+    if len(unique_categories) > 0:
+        dropdown_options = [
+            {"label": str(i) if i else "All", "value": str(i) if i else "All"}
+            for i in unique_categories
+        ]
+        default_value = str(unique_categories[0])
+
+    # Log an error or initialize `df` as needed
 
 layout = html.Div(
     [
@@ -93,16 +105,10 @@ layout = html.Div(
                                 [
                                     dcc.Dropdown(
                                         id="category-dropdown",
-                                        options=[
-                                            {
-                                                "label": str(i) if i else "Default",
-                                                "value": str(i) if i else "Default",
-                                            }
-                                            for i in df["Category"].dropna().unique()
-                                        ],
-                                        value=str(df["Category"].dropna().unique()[0]),
-                                        style={'marginTop':'10px'}
-                                    ),
+                                        options=dropdown_options,
+                                        value=default_value,
+                                        style={'marginTop': '10px'}
+                                                        ),
                                     html.Div(
                                         [
                                             dbc.Row(
@@ -270,6 +276,3 @@ def update_bar_charts(selected_category):
             # Append the figure wrapped in a dcc.Graph component to the list of charts
      
     return charts
-
-if __name__ == "__main__":
-    app.run(debug=True)
