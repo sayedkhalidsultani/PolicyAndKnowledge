@@ -2,8 +2,11 @@
 import os
 import pymssql
 import pandas as pd
-from decouple import config
 
+from dotenv import load_dotenv
+
+# Make sure this is at the top of your db_utils.py file
+load_dotenv()
 
 server="mssql-163420-0.cloudclusters.net:12454"
 database=os.getenv('database')
@@ -26,5 +29,26 @@ def execute_query(SQL_QUERY,params=None):
         # raise e
     finally:
         # The finally block ensures that these cleanup actions are executed
+        if connection:
+            connection.close()
+
+def execute_update(SQL_QUERY, params=None):
+
+    connection = None
+    try:
+        connection = pymssql.connect(server, user, password, database)
+        cursor = connection.cursor()
+        
+        if params:
+            cursor.execute(SQL_QUERY, params)
+        else:
+            cursor.execute(SQL_QUERY)
+        
+        connection.commit()  # Commit the changes to the database
+        return True, "Operation successful."
+    except pymssql.Error as e:
+        print(f"Database error: {e}")
+        return False, "Database error occurred."
+    finally:
         if connection:
             connection.close()

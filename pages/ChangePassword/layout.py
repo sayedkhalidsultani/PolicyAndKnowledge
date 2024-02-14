@@ -1,58 +1,32 @@
-from flask import Flask, request, session
-from dash  import Input, Output,callback,State,callback_context
-from dash import  html, dcc
 import dash
+from dash import html, dcc, callback, Input, Output,State
+import plotly.express as px
+import pandas as pd
 import dash_bootstrap_components as dbc
-import os 
-import pyodbc
-from dotenv import load_dotenv
+import plotly.graph_objs as go
+from db_utils import execute_query
+from db_utils import execute_update
+from flask import session
 
-load_dotenv()
 
 dash.register_page(__name__, path='/changepassword')
 
 def update_password(username, password):
-
-
-   # Connection parameters
-    DRIVER = os.getenv('DRIVER')
-    SERVER = os.getenv('SERVER')
-    DATABASE = os.getenv('DATABASE')
-    USERNAME = os.getenv('USER')
-    PASSWORD = os.getenv('PASS')
-
-    # Hash the password (highly recommended) - Example using bcrypt (ensure bcrypt is installed)
-    # import bcrypt
-    # hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-
-    conn_str = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={SERVER};DATABASE={DATABASE};UID={USERNAME};PWD={PASSWORD}'
-    conn=None
     try:
-        conn = pyodbc.connect(conn_str)
-        cursor = conn.cursor()
-
         # Check if the user exists
-        user_query = "SELECT * FROM Users WHERE username = ?"
-        cursor.execute(user_query, username)
-        user = cursor.fetchone()
+        user_query = "SELECT * FROM Users WHERE username = %s"
+        df_user = execute_query(user_query, (username,))
 
-        if user:
-            # Update the password (assuming you have a 'password' column in your 'Users' table)
-            update_query = "UPDATE Users SET password = ? WHERE username = ?"
-            
-            # Use hashed_password instead of password if you're hashing the password
-            cursor.execute(update_query, password, username) 
-            conn.commit()
-
-            return True, "Password updated successfully."
+        if not df_user.empty:
+            # Update the password
+            update_query = "UPDATE Users SET password = %s WHERE username = %s"
+            success, message = execute_update(update_query, (password, username))
+            return success, message
         else:
             return False, "User not found."
-    except pyodbc.Error as e:
-        print("Database connection error or query execution error", e)
-        return False, "Database connection error or query execution error."
-    finally:
-        if conn:
-            conn.close()
+    except Exception as e:
+        print(f"Error updating password: {e}")
+        return False, "An error occurred while updating the password."
 
 
 
