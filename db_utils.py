@@ -10,11 +10,15 @@ database=os.getenv('database')
 user=os.getenv('user')
 password=os.getenv('password')
 
-def execute_query(SQL_QUERY):
+def execute_query(SQL_QUERY,params=None):
     connection = None
     try:
         connection = pymssql.connect(server,user,password,database)
-        df = pd.read_sql(SQL_QUERY,connection)
+        if params:
+            df = pd.read_sql(SQL_QUERY, connection, params=params)
+        else:
+            df = pd.read_sql(SQL_QUERY, connection)
+
         return df
     except pymssql.Error as e:
         print(f"Database error: {e}")

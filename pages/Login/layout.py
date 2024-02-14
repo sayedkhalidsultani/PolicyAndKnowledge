@@ -5,9 +5,8 @@ import dash
 import dash_bootstrap_components as dbc
 import pyodbc
 import os
-from dotenv import load_dotenv
+from db_utils import execute_query 
 
-load_dotenv()
 
 dash.register_page(__name__, path='/login')
 
@@ -60,33 +59,19 @@ def successful_login(n_clicks, username, password):
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
     conn = None 
     if triggered_id == 'login-button' and n_clicks > 0 :
-          # Define your connection string (adjust the parameters according to your environment)
-        DRIVER = os.getenv('DRIVER')
-        SERVER = os.getenv('SERVER')
-        DATABASE = os.getenv('DATABASE')
-        USERNAME = os.getenv('USER')
-        PASSWORD = os.getenv('PASS')
-
-        conn_str = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={SERVER};DATABASE={DATABASE};UID={USERNAME};PWD={PASSWORD}'
-
+        query = "SELECT * FROM Users WHERE username = %s AND password = %s"
+        params = (username, password)
         try:
-            # Establish a connection to the database
-            conn = pyodbc.connect(conn_str)
-            cursor = conn.cursor()
-
-            # Replace 'Users' with your actual table name and columns as per your database schema
-            query = "SELECT * FROM Users WHERE username = ? AND password = ?"
-            cursor.execute(query, (username, password))
-            user = cursor.fetchone()
-
-            if user:
+            df = execute_query(query, params)
+ 
+            if not df.empty:
                 session['authenticated'] = True
                 session['username'] = username
                 return '/home', ''
             else:
                 return "/login", 'Incorrect username or password. Please try again.'
 
-        except pyodbc.Error as e:
+        except Exception as e:
             print("Database connection error or query execution error", e)
             return "/login", "Database connection error or query execution error."
 
