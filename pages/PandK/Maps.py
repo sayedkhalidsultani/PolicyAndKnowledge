@@ -12,7 +12,6 @@ from db_utils import execute_query
 dash.register_page(__name__,path='/pandk/maps')
 
 SQL_QUERY = "SELECT Indicator, Xcolumns, FirstColumnHeader, SubHeader, Colors, Year, [Values], ChartType, Source, xSecondary, SortOrder, ISPivot, Lat, Lon, Unit, Category, ValueType, YaxisTitle FROM Results where ChartType  IN ('Map','MapPoint')"
-df = execute_query(SQL_QUERY)
 
 color_palette = [
     "#9ecae1",
@@ -38,62 +37,7 @@ color_palette = [
 # Map Data is Displayed Here
 
 
-# Function to create the choropleth map figure
-def create_choropleth_map(df, geojson, color_discrete_map, selected_year=None):
-    df["Province"] = df["Xcolumns"]
-    Indicator = df["Indicator"].iloc[0]
-    unique_categories = df['MapCategory'].unique()
-    
-    if selected_year is not None:
-        df = df[df["Year"] == selected_year]
-    fig = px.choropleth_mapbox(
-        df,
-        geojson=geojson,
-        color="MapCategory",
-        locations="Province",
-        featureidkey="properties.Province",
-        center={"lat": 34.634817, "lon": 66.342506},
-        mapbox_style="white-bg",
-        zoom=5,
-        color_discrete_map={category: color for category, color in zip(unique_categories, color_palette)},
-        height=920,
-        hover_data={"Values": True},
-    )
 
-    fig.update_layout(
-        dragmode=False,
-        legend=dict(
-            orientation="h",  # Horizontal orientation
-            yanchor="bottom",
-            y=-0.5,  # Moves the legend below the chart
-            xanchor="center",
-            x=0.5,  # Centers the legend
-            title="",
-        ),
-        title={
-            "text": Indicator,
-            "y": 0.9,
-            "x": 0.5,
-            "xanchor": "center",
-            "yanchor": "top",
-            "font": {"size": 14},
-        },
-        title_font=dict(size=14),
-    )
-
-    return fig
-
-# Example check to ensure df is not None and "Category" column exists
-if df is not None and "Category" in df.columns:
-    unique_categories = df["Category"].dropna().unique()
-    if len(unique_categories) > 0:
-        dropdown_options = [
-            {"label": str(i) if i else "All", "value": str(i) if i else "All"}
-            for i in unique_categories
-        ]
-        default_value = str(unique_categories[0])
-
-    # Log an error or initialize `df` as needed
 
 layout = html.Div(
     [
@@ -104,17 +48,16 @@ layout = html.Div(
                             dbc.Col(
                                 [
                                     dcc.Dropdown(
-                                        id="category-dropdown",
-                                        options=dropdown_options,
-                                        value=default_value,
-                                        style={'marginTop': '10px'}
+                                        id="category-dropdown-Map",
+                                        
+                                        style={'marginBottom': '10px'}
                                                         ),
                                     html.Div(
                                         [
                                             dbc.Row(
                                                 [
                                                     dbc.Col(
-                                                        html.Div(id="Maps-ouput"),
+                                                        html.Div(id="charts-ouput-Map"),
                                                         width=12,
                                                     )
                                                 ]
@@ -126,6 +69,7 @@ layout = html.Div(
                                 width=12,
                             ),
                             justify="center",
+                            style={'marginTop':'10px'}
                         ),
                     ],
                    
@@ -136,11 +80,26 @@ layout = html.Div(
 
 
 # Define the callback to update the bar charts
-@callback(Output("Maps-ouput", "children"), [Input("category-dropdown", "value")])
+@callback([Output("category-dropdown-Map", "options"),
+          Output("charts-ouput-Map", "children")], 
+          [Input("category-dropdown-Map", "value")])
 def update_bar_charts(selected_category):
     # Filter the DataFrame based on selected category
+    df = execute_query(SQL_QUERY)
+    #dropdown_options = [{"label": category, "value": category} for category in df["Category"].unique()]
+     # Set dropdown options based on the fetched data
+    dropdown_options = [
+        {"label": str(category), "value": str(category)}
+        for category in df["Category"].dropna().unique()
+    ]
+    
+    # # # Set default value for dropdown if not already selected or if selected category is not in options
+    # if not selected_category or selected_category not in df["Category"].dropna().unique():
+    #     selected_category = df["Category"].dropna().unique()[0] if not df.empty else "Please Select"
+ 
+        
     filtered_df = df[df["Category"] == selected_category].copy()
-
+    fig = {}
     # Fetch and load the GeoJSON data
     geojson_url = "https://raw.githubusercontent.com/sayedkhalidsultani/ShapFiles/main/Province.json"
     geojson_response = requests.get(geojson_url)
@@ -275,5 +234,49 @@ def update_bar_charts(selected_category):
                  charts.append(graph_with_border) 
             # Append the figure wrapped in a dcc.Graph component to the list of charts
      
-    return charts
+    return dropdown_options,charts
 
+# Function to create the choropleth map figure
+def create_choropleth_map(df, geojson, color_discrete_map, selected_year=None):
+    df["Province"] = df["Xcolumns"]
+    Indicator = df["Indicator"].iloc[0]
+    unique_categories = df['MapCategory'].unique()
+    
+    if selected_year is not None:
+        df = df[df["Year"] == selected_year]
+    fig = px.choropleth_mapbox(
+        df,
+        geojson=geojson,
+        color="MapCategory",
+        locations="Province",
+        featureidkey="properties.Province",
+        center={"lat": 34.634817, "lon": 66.342506},
+        mapbox_style="white-bg",
+        zoom=5,
+        color_discrete_map={category: color for category, color in zip(unique_categories, color_palette)},
+        height=920,
+        hover_data={"Values": True},
+    )
+
+    fig.update_layout(
+        dragmode=False,
+        legend=dict(
+            orientation="h",  # Horizontal orientation
+            yanchor="bottom",
+            y=-0.5,  # Moves the legend below the chart
+            xanchor="center",
+            x=0.5,  # Centers the legend
+            title="",
+        ),
+        title={
+            "text": Indicator,
+            "y": 0.9,
+            "x": 0.5,
+            "xanchor": "center",
+            "yanchor": "top",
+            "font": {"size": 14},
+        },
+        title_font=dict(size=14),
+    )
+
+    return fig

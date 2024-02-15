@@ -15,7 +15,7 @@ from db_utils import execute_query
 dash.register_page(__name__,path='/pandk/indicators')
 
 SQL_QUERY = "SELECT Indicator, Xcolumns, FirstColumnHeader, SubHeader, Colors, Year, [Values], ChartType, Source, xSecondary, SortOrder, ISPivot, Lat, Lon, Unit, Category, ValueType, YaxisTitle FROM Results where ChartType Not IN ('Map','MapPoint')"
-df = execute_query(SQL_QUERY)
+
 
 
 color_palette = [
@@ -48,14 +48,8 @@ layout = html.Div(
                                 [
                                     dcc.Dropdown(
                                         id="category-dropdown",
-                                        options=[
-                                            {
-                                                "label": str(i) if i else "Default",
-                                                "value": str(i) if i else "Default",
-                                            }
-                                            for i in df["Category"].dropna().unique()
-                                        ],
-                                        value=str(df["Category"].dropna().unique()[0]),
+                                        style={'marginBottom': '10px'}
+                                        
                                     ),
                                     html.Div(
                                         [
@@ -84,8 +78,22 @@ layout = html.Div(
 
 
 # Define the callback to update the bar charts
-@callback(Output("charts-ouput", "children"), [Input("category-dropdown", "value")])
+@callback(
+          [Output("category-dropdown", "options"),
+          Output("charts-ouput", "children")],
+            [Input("category-dropdown", "value")])
 def update_bar_charts(selected_category):
+    df = execute_query(SQL_QUERY)
+
+      # Set dropdown options based on the fetched data
+    dropdown_options = [
+        {"label": str(category), "value": str(category)}
+        for category in df["Category"].dropna().unique()
+    ]
+    
+    # # Set default value for dropdown if not already selected or if selected category is not in options
+    # if not selected_category or selected_category not in df["Category"].dropna().unique():
+    #     selected_category = df["Category"].dropna().unique()[0] if not df.empty else "Default"
 
     
     # Filter the DataFrame based on selected category
@@ -469,7 +477,7 @@ def update_bar_charts(selected_category):
     #     )
     
 
-    return charts
+    return dropdown_options,charts
 
 
 # New Code
