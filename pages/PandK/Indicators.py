@@ -440,26 +440,26 @@ def update_bar_charts(selected_category):
             )
             charts.append(graph_with_border)  # Add charts to the charts list
 
-    # giving UniqueID to each div
-    for index, indicator in enumerate(indicators):
-    # Your existing code to prepare the chart, e.g., fig = create_bar_chart(...)
-    # Assuming 'fig' is your Plotly figure object for the current 'indicator'
+    # # giving UniqueID to each div
+    # for index, indicator in enumerate(indicators):
+    # # Your existing code to prepare the chart, e.g., fig = create_bar_chart(...)
+    # # Assuming 'fig' is your Plotly figure object for the current 'indicator'
     
-    # Generate a unique ID for the div that will contain the dcc.Graph
-        unique_div_id = f"chart-container-{indicator.replace(' ', '-').lower()}-{index}"
-        graph_id = f"graph-{indicator.replace(' ', '-').lower()}-{index}"
+    # # Generate a unique ID for the div that will contain the dcc.Graph
+    #     unique_div_id = f"chart-container-{indicator.replace(' ', '-').lower()}-{index}"
+    #     graph_id = f"graph-{indicator.replace(' ', '-').lower()}-{index}"
 
-        # Append the figure wrapped in a dcc.Graph component within a div to the list of charts
-        graph_with_border_and_unique_id = html.Div(
-            dcc.Graph(id=graph_id, figure=fig),
-            id=unique_div_id,
-            style={
-                "border": "1px solid silver",  # Optional: Adding a border for visualization
-                "padding": "10px",
-                "margin-top": "10px",
-                "margin-bottom": "10px",
-            },
-        )
+    #     # Append the figure wrapped in a dcc.Graph component within a div to the list of charts
+    #     graph_with_border_and_unique_id = html.Div(
+    #         dcc.Graph(id=graph_id, figure=fig),
+    #         id=unique_div_id,
+    #         style={
+    #             "border": "1px solid silver",  # Optional: Adding a border for visualization
+    #             "padding": "10px",
+    #             "margin-top": "10px",
+    #             "margin-bottom": "10px",
+    #         },
+    #     )
     
 
     return charts
