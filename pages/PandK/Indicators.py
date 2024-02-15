@@ -769,6 +769,3 @@ def create_table_with_subheader(indicator, headers, data, table_id):
         },
     )
 
-
-if __name__ == "__main__":
-    app.run(debug=True)
