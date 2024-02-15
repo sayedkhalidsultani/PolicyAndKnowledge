@@ -91,7 +91,7 @@ def update_bar_charts(selected_category):
     # Filter the DataFrame based on selected category
     filtered_df = df[df["Category"] == selected_category].copy()
 
-    # fig = {}
+    fig = {}
 
 
     # Mapping Starts Here
@@ -308,14 +308,21 @@ def update_bar_charts(selected_category):
                     tables.append(dynamicTable)
                 else:
                     FirstColumnTitle = indicator_df["FirstColumnHeader"].iloc[0]
-                    desired_order = indicator_df['Xcolumns'].unique()
+                    
+                    
 
+                    # Extract the sorted unique values from Xcolumns for desired_order
+                    desired_order = indicator_df['Xcolumns'].unique()
+                                
+                    
                     pivot_df = indicator_df.pivot(
                         index="Xcolumns", columns="Colors", values="Values"
                     ).reset_index()
+
                     pivot_df.rename(
                         columns={"Xcolumns": FirstColumnTitle}, inplace=True
                     )
+
                     FirstColumnTitle = indicator_df["FirstColumnHeader"].iloc[0]
                     pivot_df.rename(columns={"Xcolumns": FirstColumnTitle}, inplace=True)
 
@@ -751,7 +758,7 @@ def create_table_with_subheader(indicator, headers, data, table_id):
                 merge_duplicate_headers=True,
                 style_header={"textAlign": "center"},
                 style_data={"textAlign": "center"},
-                style_cell_conditional=[
+                style_data_conditional=[
                     {
                         "if": {
                             "column_id": headers[0]["id"]
