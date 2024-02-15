@@ -308,12 +308,20 @@ def update_bar_charts(selected_category):
                     tables.append(dynamicTable)
                 else:
                     FirstColumnTitle = indicator_df["FirstColumnHeader"].iloc[0]
+                    desired_order = indicator_df['Xcolumns'].unique()
+
                     pivot_df = indicator_df.pivot(
                         index="Xcolumns", columns="Colors", values="Values"
                     ).reset_index()
                     pivot_df.rename(
                         columns={"Xcolumns": FirstColumnTitle}, inplace=True
                     )
+                    FirstColumnTitle = indicator_df["FirstColumnHeader"].iloc[0]
+                    pivot_df.rename(columns={"Xcolumns": FirstColumnTitle}, inplace=True)
+
+                    pivot_df[FirstColumnTitle] = pd.Categorical(pivot_df[FirstColumnTitle], categories=desired_order, ordered=True)
+                    pivot_df.sort_values(by=FirstColumnTitle, inplace=True)
+
                     columns = [{"name": col, "id": col} for col in pivot_df.columns]
                     tables.append(
                         create_table_with_subheader(
