@@ -252,6 +252,7 @@ def update_bar_charts(selected_category):
 
                 elif isPivot == 2:
                     FirstColumnTitle = indicator_df["FirstColumnHeader"].iloc[0]
+                    indicator_df.sort_values(by='SortOrder', inplace=True)
                     multi_index = pd.MultiIndex.from_product(
                         [
                             indicator_df["Colors"].unique(),
