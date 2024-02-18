@@ -262,7 +262,7 @@ def update_bar_charts(selected_category):
                     )
                     df2 = pd.DataFrame(
                         index=indicator_df["Xcolumns"].unique(), columns=multi_index
-                    ).sort_index()
+                    )
 
                     for row in indicator_df.itertuples():
                         df2.loc[row.Xcolumns, (row.Colors, row.SubHeader)] = row.Values
