@@ -252,7 +252,11 @@ def update_bar_charts(selected_category):
 
                 elif isPivot == 2:
                     FirstColumnTitle = indicator_df["FirstColumnHeader"].iloc[0]
+
                     indicator_df.sort_values(by='SortOrder', inplace=True)
+
+                    xColumns=indicator_df["Xcolumns"].unique()
+
                     multi_index = pd.MultiIndex.from_product(
                         [
                             indicator_df["Colors"].unique(),
@@ -261,14 +265,17 @@ def update_bar_charts(selected_category):
                         names=["Colors", "SubHeader"],
                     )
                     df2 = pd.DataFrame(
-                        index=indicator_df["Xcolumns"].unique(), columns=multi_index
+                        index=xColumns, columns=multi_index
                     )
 
                     for row in indicator_df.itertuples():
                         df2.loc[row.Xcolumns, (row.Colors, row.SubHeader)] = row.Values
 
-                    data_for_dash = convert_df_to_dict(df2)
+                
 
+
+                    data_for_dash = convert_df_to_dict(df2)
+                 
                     columns = [
                         {
                             "name": "",
@@ -279,6 +286,8 @@ def update_bar_charts(selected_category):
                         for x1, x2 in df2.columns
                         if x2
                     ]
+
+                    
 
                     dynamicTable = html.Div(
                         [
@@ -305,6 +314,14 @@ def update_bar_charts(selected_category):
                                         "textAlign": "left",  # Align text to left for the first column
                                     }
                                 ],
+                                style_table={
+                                    'maxHeight': '600px',  # Adjust based on your needs
+                                    'overflowY': 'auto',
+                                    'overflowX': 'auto',
+                                    'width': '100%',
+                                    'minWidth': '100%',
+                                },
+        
                             ),
                         ],
                         style={
@@ -775,6 +792,13 @@ def create_table_with_subheader(indicator, headers, data, table_id):
                         "textAlign": "left",
                     }
                 ],
+                style_table={
+                                    'maxHeight': '600px',  # Adjust based on your needs
+                                    'overflowY': 'auto',
+                                    'overflowX': 'auto',
+                                    'width': '100%',
+                                    'minWidth': '100%',
+                                },
             ),
         ],
         style={
