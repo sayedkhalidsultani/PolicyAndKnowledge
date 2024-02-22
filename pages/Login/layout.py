@@ -17,7 +17,7 @@ layout = html.Div(
         [
                 dbc.Row([
         dbc.Col(html.Div([
-             html.H6("Product And Knowledg Unit",className="p-3")
+             html.H6("Policy And Knowledg Unit",className="p-3")
         ]),xs=12, md=8,style={'backgroundColor': 'blue','color':'white','padding':'5px','width':'100%','padding':'0px','height':'50px'})  # Centered navigation bar with offset
     ]),
             dbc.Row(
