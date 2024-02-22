@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import os
 from flask import Flask,session
 from dash.exceptions import PreventUpdate
+from dash import no_update
 import os
 server = Flask(__name__)
 server.secret_key= os.getenv('SECRET_KEY')
@@ -25,14 +26,20 @@ app.layout=dcc.Loading(
     # Body content centered within an 8-column width with 2 columns offset using className
     dbc.Row([
         dbc.Col(dash.page_container ,xs=12,md=8, className="offset-md-2", style={'backgroundColor': 'white'})  # Centered body content with offset
-    ])
+    ]),
 ])])
 
-@callback([Output('url_login_Main', 'pathname'),Output('dynamic-nav', 'children')],
+@callback([Output('url_login_Main', 'pathname'), Output('dynamic-nav', 'children')],
           [Input('url_login_Main', 'pathname')])
 def redirect_to_login(pathname):
-    if session.get('authenticated'):
-        # Navigation for authenticated users
+    ctx = dash.callback_context
+
+    if not ctx.triggered:
+        # On initial load, if no input has triggered the callback, don't update.
+        # This prevents an unnecessary redirect on slow connections before session state is checked.
+        return no_update, no_update
+    elif session.get('authenticated'):
+        # Logic for authenticated users remains the same
         nav = dbc.NavbarSimple(
             children=[
                 dbc.NavItem(dbc.NavLink("Home", href="/home")),
@@ -45,34 +52,22 @@ def redirect_to_login(pathname):
             color="primary",
             dark=True,
         )
-           # Only redirect to /home if the trigger was from logging in
-        if pathname == "/login" and trigger_id == 'url_login_Main':
+        # Determine if the callback was triggered by a direct navigation to /login
+        if pathname == "/login" and ctx.triggered[0]['prop_id'] == 'url_login_Main.pathname':
             return "/home", nav
-        else:
-            # Prevent update to the pathname if already authenticated,
-            # allowing navigation to other pages
-            return dash.no_update, nav
+        return no_update, nav
     else:
-        # Navigation for unauthenticated users
+        # Logic for unauthenticated users remains the same
         nav = dbc.NavbarSimple(
-            children=[
-                dbc.NavItem(dbc.NavLink("Login", href="/login"))
-            ],
-            brand="Product And Knowledge Unit",
+            children=[dbc.NavItem(dbc.NavLink("Login", href="/login"))],
+            brand="Policy And Knowledge Unit",
             brand_href="/login",
             color="primary",
             dark=True,
         )
-        # Public or login page content
-         # Redirect to the login page if not authenticated,
-        # but only if not already on the login page to avoid infinite redirects
         if pathname != "/login":
             return "/login", nav
-        else:
-            raise PreventUpdate
-
-    return pathname, nav
-
+        return no_update, no_update 
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080, debug=False)
