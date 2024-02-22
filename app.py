@@ -47,7 +47,7 @@ def redirect_to_login(pathname):
                 dbc.NavItem(dbc.NavLink("Profile", href="/profile")),
                 dbc.NavItem(dbc.NavLink("Logout", href="/logout")),
             ],
-            brand="Product And Knowledge Unit",
+            brand="Policy And Knowledge Unit",
             brand_href="/",
             color="primary",
             dark=True,
