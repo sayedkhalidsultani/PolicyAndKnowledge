@@ -15,18 +15,24 @@ from db_utils import execute_query
 dash.register_page(__name__,path='/pandk/indicators')
 
 color_palette = [
+        "#00A08B",
+        "#fc8d59",
+            "#41ab5d",
+        "#d1e5f0",
+       "#67a9cf",
     "#9ecae1",
+     "#778AAE",
     "#565656",
-    "#41ab5d",
+
     "#edf8b1",
     "#ef8a62",
     "#7fcdbb",
-    "#d1e5f0",
-    "#67a9cf",
+
+ 
     "#34495E",
-    "#00A08B",
+
     "#A777F1",
-    "#778AAE",
+   
     "#ec7014",
     "#c6dbef",
      "#08306b",
@@ -183,14 +189,15 @@ def update_bar_charts(selected_category,year_slider):
             xsecondary = None
 
         if xsecondary=='B' or xsecondary=='L':
+           
             if chart_type == "Line":
                 LineBasevalues = indicator_df[indicator_df["xSecondary"] == "B"]
                 lineSecondaryvalues = indicator_df[indicator_df["xSecondary"] == "L"]
                 fig = create_line_chart(
-                    LineBasevalues, indicator, yaxis_title, color_palette=color_palette
+                    LineBasevalues, indicator, yaxis_title, color_palette=color_palette,color_index=0
                 )
                 fig = create_line_chart(
-                    lineSecondaryvalues, indicator, yaxis_title, secondary=True, fig=fig,color_palette=color_palette
+                    lineSecondaryvalues, indicator, yaxis_title, secondary=True, fig=fig,color_palette=color_palette,color_index=1
                 )
             else:
                 barvalues = indicator_df[indicator_df["xSecondary"] == "B"]
@@ -224,7 +231,7 @@ def update_bar_charts(selected_category,year_slider):
 
             # Append the data table to the charts
             #   charts.append(html.Div([data_table]))
-            elif chart_type == "Line":
+            elif chart_type == "Line" and (xsecondary!='B' or xsecondary!='L'):
                 # fig = create_line_chart(indicator_df, indicator, yaxis_title)
                 fig = create_line_chart(
                     indicator_df, indicator, yaxis_title, color_palette=color_palette
@@ -702,16 +709,19 @@ def create_line_chart(
     secondary=False,
     fig=None,
     color_palette=None,
+    color_index=7
 ):
     # Initialize figure for primary chart, use existing figure for secondary chart
     if not secondary or fig is None:
         fig = go.Figure()
     
-
+    if color_palette is None or not color_palette:
+        raise ValueError("color_palette must be provided and contain at least one color")
 
     # Add a scatter plot trace for each 'Colors' group
     unique_colors = df["Colors"].unique()
-    color_map = {color: palette_color for color, palette_color in zip(unique_colors, color_palette)}
+    #color_map = {color: palette_color for color, palette_color in zip(unique_colors, color_palette)}
+    color_map = {color: color_palette[i % len(color_palette)] for i, color in enumerate(unique_colors)}
 
     for color in unique_colors:
         df_by_color = df[df["Colors"] == color]
@@ -723,7 +733,7 @@ def create_line_chart(
             name=color,
             #hovertemplate=df_by_color["HoverText"],
             line_shape="spline",
-            line=dict(color=color_map[color]),
+            line=dict(color=color_palette[color_index]),
         )
 
         if secondary:
