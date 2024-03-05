@@ -67,7 +67,7 @@ def successful_login(n_clicks, username, password):
             if not df.empty:
                 session['authenticated'] = True
                 session['username'] = username
-                return '/home', ''
+                return 'pandk/indicators', ''
             else:
                 return "/login", 'Incorrect username or password. Please try again.'
 

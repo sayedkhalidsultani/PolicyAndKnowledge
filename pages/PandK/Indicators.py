@@ -14,10 +14,6 @@ from db_utils import execute_query
 
 dash.register_page(__name__,path='/pandk/indicators')
 
-SQL_QUERY = "SELECT Indicator, Xcolumns, FirstColumnHeader, SubHeader, Colors, Year, [Values], ChartType, Source, xSecondary, SortOrder, ISPivot, Lat, Lon, Unit, Category, ValueType, YaxisTitle FROM Results where ChartType Not IN ('Map','MapPoint')"
-
-
-
 color_palette = [
     "#9ecae1",
     "#565656",
@@ -36,7 +32,10 @@ color_palette = [
      "#08306b",
 ]
 
-
+rangeslider_marks = {2015:'2015',2016:'2016',2017:'2017',2018:'2018',
+    
+    2019:'2019', 2020:'2020', 2021:'2021', 2022:'2022', 2023:'2023',
+                     2024:'2024', 2025:'2025'}
 
 layout = html.Div(
     [
@@ -48,9 +47,23 @@ layout = html.Div(
                                 [
                                     dcc.Dropdown(
                                         id="category-dropdown",
-                                        style={'marginBottom': '10px'}
-                                        
-                                    ),
+                                        placeholder="Select a Category",
+                                        style={'marginBottom': '10px' }),
+                                    dcc.Dropdown(
+                                        id="SubCategory-dropdown",
+                                        placeholder="Select a SubCategory",
+                                        style={'marginBottom': '10px'}),
+                                    dcc.RangeSlider(min=2015,
+                                               max=2025,
+                                               value=[2015,2025],
+                                        step=1,
+                                        updatemode='mouseup',
+                                        persistence=True,
+                                        marks=rangeslider_marks,
+                                        persistence_type='session', # 'memory' or 'local'
+                                        id="Year-Slider"
+                                ),
+                                    
                                     html.Div(
                                         [
                                             dbc.Row(
@@ -79,25 +92,15 @@ layout = html.Div(
 
 # Define the callback to update the bar charts
 @callback(
-          [Output("category-dropdown", "options"),
-          Output("charts-ouput", "children")],
-            [Input("category-dropdown", "value")])
-def update_bar_charts(selected_category):
-    df = execute_query(SQL_QUERY)
+            Output("charts-ouput", "children"),
+            [Input("SubCategory-dropdown", "value"),Input("Year-Slider", "value")])
+def update_bar_charts(selected_category,year_slider):
 
-      # Set dropdown options based on the fetched data
-    dropdown_options = [
-        {"label": str(category), "value": str(category)}
-        for category in df["Category"].dropna().unique()
-    ]
-    
-    # # Set default value for dropdown if not already selected or if selected category is not in options
-    # if not selected_category or selected_category not in df["Category"].dropna().unique():
-    #     selected_category = df["Category"].dropna().unique()[0] if not df.empty else "Default"
-
+    SQL_QUERY = "SELECT Indicator, Xcolumns, FirstColumnHeader, SubHeader, Colors, Year, [Values], ChartType, Source, xSecondary, r.SortOrder, ISPivot, Lat, Lon, Unit, r.Category, ValueType, YaxisTitle,c.SubCategory FROM Results R INNER JOIN dbo.Categories c ON c.ID=r.SubCategoryID where c.SubCategory= %s and r.year between %s  and %s"
+    df = execute_query(SQL_QUERY, (selected_category,year_slider[0],year_slider[1]))
     
     # Filter the DataFrame based on selected category
-    filtered_df = df[df["Category"] == selected_category].copy()
+    filtered_df = df[df["SubCategory"] == selected_category].copy()
 
     fig = {}
 
@@ -251,6 +254,9 @@ def update_bar_charts(selected_category):
                     )
 
                 elif isPivot == 2:
+                    #BackGroundColor = indicator_df["BackgroundColor"].iloc[0]
+                                                    
+                   
                     FirstColumnTitle = indicator_df["FirstColumnHeader"].iloc[0]
 
                     indicator_df.sort_values(by='SortOrder', inplace=True)
@@ -286,8 +292,11 @@ def update_bar_charts(selected_category):
                         for x1, x2 in df2.columns
                         if x2
                     ]
-
                     
+                    quantiles = indicator_df['Values'].quantile([0.33, 0.66]).to_dict()
+
+                    # low_threshold = quantiles[0.33]
+                    # medium_threshold = quantiles[0.66]
 
                     dynamicTable = html.Div(
                         [
@@ -302,11 +311,55 @@ def update_bar_charts(selected_category):
                             DataTable(
                                 id="table",
                                 columns=columns,
+                               
                                 data=data_for_dash,
                                 fixed_columns={'headers': True, 'data': 1},
                                 merge_duplicate_headers=True,
                                 style_header={"textAlign": "center"},
                                 style_data={"textAlign": "center"},
+                                style_data_conditional=[
+                                    # Conditional formatting for cells with zero
+                                    {
+                                        'if': {'column_id': col_id, 'filter_query': f'{{{col_id}}} = 0'},
+                                        'backgroundColor': 'black',
+                                        'color': 'white'
+                                    }
+                                    for col_id in [col['id'] for col in columns if col['id'] != 'index']  # Exclude the index column from formatting
+                                ] + [
+                                    # Conditional formatting for cells with values less than zero
+                                    {
+                                        'if': {'column_id': col_id, 'filter_query': f'{{{col_id}}} < 0'},
+                                        'backgroundColor': 'red',
+                                        'color': 'white'
+                                    }
+                                    for col_id in [col['id'] for col in columns if col['id'] != 'index']  # Exclude the index column from formatting
+                                ],
+                                # style_data_conditional = [
+                                #         # Conditional formatting for low values
+                                #         {
+                                #             'if': {'column_id': col_id, 'filter_query': f'{{{col_id}}} <= {low_threshold}'},
+                                #             'backgroundColor': '#969696',
+                                #             'color': 'white'
+                                #         }
+                                #         for col_id in [col['id'] for col in columns if col['id'] != 'index']
+                                #     ] + [
+                                #         # Conditional formatting for medium values
+                                #         {
+                                #             'if': {'column_id': col_id, 'filter_query': f'{{{col_id}}} > {low_threshold} && {{{col_id}}} <= {medium_threshold}'},
+                                #             'backgroundColor': '#08519c',
+                                #             'color': 'white'
+                                #         }
+                                #         for col_id in [col['id'] for col in columns if col['id'] != 'index']
+                                #     ] + [
+                                #         # Conditional formatting for high values
+                                #         {
+                                #             'if': {'column_id': col_id, 'filter_query': f'{{{col_id}}} > {medium_threshold}'},
+                                #             'backgroundColor': '#00441b',
+                                #             'color': 'white'
+                                #         }
+                                #         for col_id in [col['id'] for col in columns if col['id'] != 'index']
+                                #     ],
+
                                 style_cell_conditional=[
                                     {
                                         "if": {
@@ -321,8 +374,7 @@ def update_bar_charts(selected_category):
                                     'overflowX': 'auto',
                                     'width': '100%',
                                     'minWidth': '100%',
-                                },
-        
+                                },       
                             ),
                         ],
                         style={
@@ -496,7 +548,7 @@ def update_bar_charts(selected_category):
     #     )
     
 
-    return dropdown_options,charts
+    return charts
 
 
 # New Code
@@ -625,7 +677,7 @@ def create_bar_chart(
             "font": {"size": 14},
         },
         showlegend=bool(
-            len(df["Colors"].unique()) > 1 or df["xSecondary"].notnull().any()
+            len(df["Colors"].unique()) > 1 or df['xSecondary'].isin(['B', 'L']).any()
         ),
     )
     return fig
@@ -782,7 +834,6 @@ def create_table_with_subheader(indicator, headers, data, table_id):
                 id=table_id,
                 columns=headers,
                 data=data,
-                fixed_columns={'headers': True, 'data': 1},
                 merge_duplicate_headers=True,
                 style_header={"textAlign": "center"},
                 style_data={"textAlign": "center"},
@@ -811,3 +862,45 @@ def create_table_with_subheader(indicator, headers, data, table_id):
         },
     )
 
+# def highlight_max_row(df):
+    df_numeric_columns = df.select_dtypes('number').drop(['id'], axis=1)
+    return [
+        {
+            'if': {
+                'filter_query': '{{id}} = {}'.format(i),
+                'column_id': col
+            },
+            'backgroundColor': '#3D9970',
+            'color': 'white'
+        }
+        # idxmax(axis=1) finds the max indices of each row
+        for (i, col) in enumerate(
+            df_numeric_columns.idxmax(axis=1)
+        )
+    ]
+
+
+# Cascading Dropdownlist 
+
+@callback(
+    Output('category-dropdown', 'options'),
+    [Input('loading-map', 'children')]  # Assuming 'page-content' is the ID of a Div in your layout that loads the entire page content
+)
+def populate_category_dropdown(_):
+    df = execute_query("SELECT DISTINCT Category FROM dbo.Categories ORDER BY Category")  # Adjust query as needed
+    options = [{'label': category, 'value': category} for category in df['Category'].dropna().unique()]
+    return options
+
+# Callback to update 'SubCategory-dropdown' based on selected category
+@callback(
+    Output('SubCategory-dropdown', 'options'),
+    [Input('category-dropdown', 'value')]
+)
+def update_subcategory_dropdown(selected_category):
+    if selected_category is not None:
+        query = "SELECT SubCategory FROM dbo.Categories WHERE Category = %s"  # Use parameterized queries to prevent SQL injection
+        df = execute_query(query, (selected_category,))
+        options = [{'label': subcategory, 'value': subcategory} for subcategory in df['SubCategory'].dropna().unique()]
+    else:
+        options = []
+    return options
