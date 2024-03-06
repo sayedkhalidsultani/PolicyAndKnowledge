@@ -79,6 +79,14 @@ layout = html.Div(
                                                         width=12,
                                                     )
                                                 ]
+                                            ),
+                                             dbc.Row(
+                                                [
+                                                    dbc.Col(
+                                                        html.Div(id="Source"),
+                                                        width=12,
+                                                    )
+                                                ]
                                             )
                                         ],
                                         id="charts-container",
@@ -143,6 +151,7 @@ def update_bar_charts(selected_category,year_slider):
         tables = []
        
         indicator_df = filtered_df[filtered_df["Indicator"] == indicator]
+        Source = 'Source:'+indicator_df["Source"].iloc[0]
 
 
         yaxis_title = indicator_df["YaxisTitle"].iloc[0] if not pd.isna(indicator_df["YaxisTitle"].iloc[0]) else ""
@@ -167,6 +176,8 @@ def update_bar_charts(selected_category,year_slider):
         indicator_df.sort_values(by=["SortOrder", "Indicator"], inplace=True)
 
         chart_type = indicator_df["ChartType"].iloc[0]
+
+   
 
        
    
@@ -194,35 +205,35 @@ def update_bar_charts(selected_category,year_slider):
                 LineBasevalues = indicator_df[indicator_df["xSecondary"] == "B"]
                 lineSecondaryvalues = indicator_df[indicator_df["xSecondary"] == "L"]
                 fig = create_line_chart(
-                    LineBasevalues, indicator, yaxis_title, color_palette=color_palette,color_index=0
+                    LineBasevalues, indicator+'<br>('+Source+')', yaxis_title, color_palette=color_palette,color_index=0
                 )
                 fig = create_line_chart(
-                    lineSecondaryvalues, indicator, yaxis_title, secondary=True, fig=fig,color_palette=color_palette,color_index=1
+                    lineSecondaryvalues, indicator+'<br>('+Source+')', yaxis_title, secondary=True, fig=fig,color_palette=color_palette,color_index=1
                 )
             else:
                 barvalues = indicator_df[indicator_df["xSecondary"] == "B"]
                 linevalues = indicator_df[indicator_df["xSecondary"] == "L"]
                 fig = create_bar_chart(
-                    barvalues, indicator, yaxis_title, value_type, Stacked=False
+                    barvalues, indicator+'<br>('+Source+')', yaxis_title, value_type, Stacked=False
                 )
                 fig = create_line_chart(
-                    linevalues, indicator, yaxis_title, secondary=True, fig=fig,color_palette=color_palette
+                    linevalues, indicator+'<br>'+'('+Source+')', yaxis_title, secondary=True, fig=fig,color_palette=color_palette
                 )
 
         else:
             if chart_type == "Bar":
                 
                 fig = create_bar_chart(
-                    indicator_df, indicator, yaxis_title, value_type, Stacked=False
+                    indicator_df, indicator+'<br>'+'('+Source+')', yaxis_title, value_type, Stacked=False
                 )
             elif chart_type == "StackedBar":  # Add support for Horizontal Bar chart
                 fig = create_bar_chart(
-                    indicator_df, indicator, yaxis_title, value_type, Stacked=True
+                    indicator_df, indicator+'<br>'+'('+Source+')', yaxis_title, value_type, Stacked=True
                 )
             elif chart_type == "HBar":  # Add support for Horizontal Bar chart
                 fig = create_bar_chart(
                     indicator_df,
-                    indicator,
+                    indicator+'<br>'+'('+Source+')',
                     yaxis_title,
                     value_type,
                     horizontal=True,
@@ -234,7 +245,7 @@ def update_bar_charts(selected_category,year_slider):
             elif chart_type == "Line" and (xsecondary!='B' or xsecondary!='L'):
                 # fig = create_line_chart(indicator_df, indicator, yaxis_title)
                 fig = create_line_chart(
-                    indicator_df, indicator, yaxis_title, color_palette=color_palette
+                    indicator_df, indicator+'<br>'+'('+Source+')', yaxis_title, color_palette=color_palette
                 )
 
             elif chart_type == "Table":
@@ -256,7 +267,7 @@ def update_bar_charts(selected_category,year_slider):
    
                     tables.append(
                         create_table_with_subheader(
-                            indicator, headers, pivot_df.to_dict("records"), "table1"
+                            indicator, headers, pivot_df.to_dict("records"), "table1",Source
                         )
                     )
 
@@ -315,6 +326,14 @@ def update_bar_charts(selected_category,year_slider):
                                     "margin-bottom": "10px",
                                 },
                             ),
+                            html.Label(
+                                '('+Source+')',
+                                style={
+                                    "textAlign": "center",
+                                    "display": "block",
+                                },
+                            ),
+
                             DataTable(
                                 id="table",
                                 columns=columns,
@@ -418,10 +437,10 @@ def update_bar_charts(selected_category,year_slider):
                     columns = [{"name": col, "id": col} for col in pivot_df.columns]
                     tables.append(
                         create_table_with_subheader(
-                            indicator,
+                            Indicator,
                             columns,
                             pivot_df.to_dict("records"),
-                            "table_default",
+                            "table_default",Source
                         )
                     )
                     
@@ -437,7 +456,7 @@ def update_bar_charts(selected_category,year_slider):
                 ))
                   fig.update_layout(
                     title={
-                        'text': indicator,
+                        'text': Indicator+'-('+Source+')',
                         'y':0.9,
                         'x':0.5,
                         'xanchor': 'center',
@@ -461,6 +480,13 @@ def update_bar_charts(selected_category,year_slider):
                                 "textAlign": "center",
                                 "display": "block",
                                 "margin-bottom": "10px",
+                            },
+                        ),
+                         html.Label(
+                            '('+Source+')',
+                            style={
+                                "textAlign": "center",
+                                "display": "block"
                             },
                         ),
                         dbc.Row([dbc.Col(card) for card in cards], className="mb-4"),
@@ -503,7 +529,7 @@ def update_bar_charts(selected_category,year_slider):
                         col=i,
                     )
                     fig.update_layout(
-                        title_text=indicator,
+                        title_text=indicator+'-('+Source+')',
                         title_x=0.5,
                         title_font=dict(size=12),
                         legend=dict(
@@ -816,7 +842,7 @@ def format_number_with_thousands_separator(number):
     return "{:,}".format(number)
 
 
-def create_table_with_subheader(indicator, headers, data, table_id):
+def create_table_with_subheader(indicator, headers, data, table_id,Source):
 
     """
     Create a Dash HTML table component wrapped in a div with a label.
@@ -838,6 +864,13 @@ def create_table_with_subheader(indicator, headers, data, table_id):
                     "textAlign": "center",
                     "display": "block",
                     "margin-bottom": "10px",
+                },
+            ),
+            html.Label(
+                '('+Source+')',
+                style={
+                    "textAlign": "center",
+                    "display": "block"
                 },
             ),
             DataTable(
