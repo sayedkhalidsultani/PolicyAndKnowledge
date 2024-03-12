@@ -1,0 +1,17 @@
+.export,
+#btn-export {
+  background-color: white;
+  font-size: 12px;
+  border: 1px solid silver;
+  margin-bottom: 5px;
+}
+
+.export:after {
+  content: " Data";
+  font-size: 12px;
+}
+
+#btn-export {
+  margin-top: 5px;
+  margin-left: 5px;
+}

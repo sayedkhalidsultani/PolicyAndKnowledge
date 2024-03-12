@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, callback, Input, Output
+from dash import html, dcc, callback, Input, Output,State
 import plotly.express as px
 import pandas as pd
 import dash_bootstrap_components as dbc
@@ -45,6 +45,9 @@ rangeslider_marks = {2015:'2015',2016:'2016',2017:'2017',2018:'2018',
 
 layout = html.Div(
     [
+        # dcc.Store(id='store-data'),
+        # dcc.Download(id="download-csv"),
+        # html.Button("Download csv", id="btn-download-csv"),
 
                 dbc.Container(
                     [
@@ -75,19 +78,25 @@ layout = html.Div(
                                             dbc.Row(
                                                 [
                                                     dbc.Col(
-                                                        html.Div(id="charts-ouput"),
-                                                        width=12,
+                                                        dbc.Row([
+                                                            dbc.Col(
+                                                                html.Div(
+                                                                    [
+                                                                html.Button('Export Data', id='btn-export',style={'display': 'none'}, n_clicks=0),
+                                                                html.Div(id="charts-ouput")],style={'border':'1px solid silver','padding-left':'5px'}),width=12
+                                                                ),
+                                                            dcc.Store(id='store-data'),
+                                                            dcc.Download(id="download-csv"),
+                                                           
+                                                            
+                                                        ])
+                                                        
+                                                        
+                                                     
                                                     )
-                                                ]
+                                                ],
                                             ),
-                                             dbc.Row(
-                                                [
-                                                    dbc.Col(
-                                                        html.Div(id="Source"),
-                                                        width=12,
-                                                    )
-                                                ]
-                                            )
+                                         
                                         ],
                                         id="charts-container",
                                     ),
@@ -97,7 +106,7 @@ layout = html.Div(
                             justify="center",
                             style={'marginTop':'10px'}
                         ),
-                    ],
+                    ],style={'padding':'10px'}
                    
                 ),
     ],
@@ -106,7 +115,8 @@ layout = html.Div(
 
 # Define the callback to update the bar charts
 @callback(
-            Output("charts-ouput", "children"),
+            [Output("charts-ouput", "children"),Output('btn-export', 'style'),Output('store-data', 'data')],
+             #Output('store-data', 'data')
             [Input("SubCategory-dropdown", "value"),Input("Year-Slider", "value")])
 def update_bar_charts(selected_category,year_slider):
 
@@ -114,7 +124,7 @@ def update_bar_charts(selected_category,year_slider):
     df = execute_query(SQL_QUERY, (selected_category,year_slider[0],year_slider[1]))
     
     # Filter the DataFrame based on selected category
-    filtered_df = df[df["SubCategory"] == selected_category].copy()
+    filtered_df = df #df[df["SubCategory"] == selected_category].copy()
 
     fig = {}
 
@@ -143,8 +153,11 @@ def update_bar_charts(selected_category,year_slider):
     # Create a bar chart for each indicator
     charts = []
 
-
- 
+    # Show or hide buttons
+    
+    HidenExportButton = {'display': 'none'}
+    VisableExportButton = {'display': 'inline-block'}
+    ShowExportButtons=HidenExportButton
     
     # Check for secondary
     for indicator in indicators:
@@ -200,7 +213,7 @@ def update_bar_charts(selected_category,year_slider):
             xsecondary = None
 
         if xsecondary=='B' or xsecondary=='L':
-           
+            ShowExportButtons=VisableExportButton
             if chart_type == "Line":
                 LineBasevalues = indicator_df[indicator_df["xSecondary"] == "B"]
                 lineSecondaryvalues = indicator_df[indicator_df["xSecondary"] == "L"]
@@ -222,15 +235,17 @@ def update_bar_charts(selected_category,year_slider):
 
         else:
             if chart_type == "Bar":
-                
+                ShowExportButtons=VisableExportButton
                 fig = create_bar_chart(
                     indicator_df, indicator+'<br>'+'('+Source+')', yaxis_title, value_type, Stacked=False
                 )
             elif chart_type == "StackedBar":  # Add support for Horizontal Bar chart
+                ShowExportButtons=VisableExportButton
                 fig = create_bar_chart(
                     indicator_df, indicator+'<br>'+'('+Source+')', yaxis_title, value_type, Stacked=True
                 )
             elif chart_type == "HBar":  # Add support for Horizontal Bar chart
+                ShowExportButtons=VisableExportButton
                 fig = create_bar_chart(
                     indicator_df,
                     indicator+'<br>'+'('+Source+')',
@@ -243,12 +258,14 @@ def update_bar_charts(selected_category,year_slider):
             # Append the data table to the charts
             #   charts.append(html.Div([data_table]))
             elif chart_type == "Line" and (xsecondary!='B' or xsecondary!='L'):
+                ShowExportButtons=VisableExportButton
                 # fig = create_line_chart(indicator_df, indicator, yaxis_title)
                 fig = create_line_chart(
                     indicator_df, indicator+'<br>'+'('+Source+')', yaxis_title, color_palette=color_palette
                 )
 
             elif chart_type == "Table":
+                ShowExportButtons=HidenExportButton
           
                 indicator_df['ISPivot'] = pd.to_numeric(indicator_df['ISPivot'], downcast='integer', errors='coerce')
                 indicator_df['Year'] = pd.to_numeric(indicator_df['Year'], errors='coerce')
@@ -337,7 +354,7 @@ def update_bar_charts(selected_category,year_slider):
                             DataTable(
                                 id="table",
                                 columns=columns,
-                               
+                                export_format="csv",
                                 data=data_for_dash,
                                 fixed_columns={'headers': True, 'data': 1},
                                 merge_duplicate_headers=True,
@@ -360,32 +377,7 @@ def update_bar_charts(selected_category,year_slider):
                                     }
                                     for col_id in [col['id'] for col in columns if col['id'] != 'index']  # Exclude the index column from formatting
                                 ],
-                                # style_data_conditional = [
-                                #         # Conditional formatting for low values
-                                #         {
-                                #             'if': {'column_id': col_id, 'filter_query': f'{{{col_id}}} <= {low_threshold}'},
-                                #             'backgroundColor': '#969696',
-                                #             'color': 'white'
-                                #         }
-                                #         for col_id in [col['id'] for col in columns if col['id'] != 'index']
-                                #     ] + [
-                                #         # Conditional formatting for medium values
-                                #         {
-                                #             'if': {'column_id': col_id, 'filter_query': f'{{{col_id}}} > {low_threshold} && {{{col_id}}} <= {medium_threshold}'},
-                                #             'backgroundColor': '#08519c',
-                                #             'color': 'white'
-                                #         }
-                                #         for col_id in [col['id'] for col in columns if col['id'] != 'index']
-                                #     ] + [
-                                #         # Conditional formatting for high values
-                                #         {
-                                #             'if': {'column_id': col_id, 'filter_query': f'{{{col_id}}} > {medium_threshold}'},
-                                #             'backgroundColor': '#00441b',
-                                #             'color': 'white'
-                                #         }
-                                #         for col_id in [col['id'] for col in columns if col['id'] != 'index']
-                                #     ],
-
+              
                                 style_cell_conditional=[
                                     {
                                         "if": {
@@ -404,10 +396,8 @@ def update_bar_charts(selected_category,year_slider):
                             ),
                         ],
                         style={
-                            "border": "1px solid silver",  # Adding a 1px solid border
-                            "padding": "10px",
-                            "margin-top": "10px",
-                            "margin-bottom": "10px",  # Optional: Adds space between charts
+                            "border": "0px solid silver",  # Adding a 1px solid border
+                # Optional: Adds space between charts
                         },
                     )
                     tables.append(dynamicTable)
@@ -551,7 +541,7 @@ def update_bar_charts(selected_category,year_slider):
             graph_with_border = html.Div(
                 dcc.Graph(figure=fig),
                 style={
-                    "border": "1px solid silver",  # Adding a 1px solid border
+                 # Adding a 1px solid border
                     "padding": "10px",
                     "margin-top": "10px",
                     "margin-bottom": "10px",  # Optional: Adds space between charts
@@ -581,7 +571,7 @@ def update_bar_charts(selected_category,year_slider):
     #     )
     
 
-    return charts
+    return charts,ShowExportButtons,filtered_df.to_dict('records') #,filtered_df.to_dict('records')
 
 
 # New Code
@@ -877,6 +867,7 @@ def create_table_with_subheader(indicator, headers, data, table_id,Source):
                 id=table_id,
                 columns=headers,
                 data=data,
+                export_format="csv",
                 merge_duplicate_headers=True,
                 style_header={"textAlign": "center"},
                 style_data={"textAlign": "center"},
@@ -947,3 +938,22 @@ def update_subcategory_dropdown(selected_category):
     else:
         options = []
     return options
+
+@callback(
+    Output("download-csv", "data"),
+    Input("btn-export", "n_clicks"),
+    [State('store-data', 'data')],
+    prevent_initial_call=True,
+)
+def func(n_clicks,stored_data):
+    if n_clicks is None or stored_data is None:
+        raise PreventUpdate
+    df = pd.DataFrame(stored_data)
+    columns_to_exclude = ['FirstColumnHeader', 'SubHeader','Year','ChartType','Source','xSecondary','SortOrder','ISPivot','Lat','Lon','Unit','Category','ValueType','YaxisTitle','SubCategory']
+    df = df.drop(columns=columns_to_exclude)
+    df = df.rename(columns={
+    'Xcolumns': 'XSeries',
+    'Colors': 'Categories',
+    })
+    
+    return dcc.send_data_frame(df.to_excel, "Results.xlsx", engine="xlsxwriter",index=False)
