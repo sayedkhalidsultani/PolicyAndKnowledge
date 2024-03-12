@@ -9,7 +9,7 @@ import requests
 from plotly.subplots import make_subplots
 import math
 from db_utils import execute_query
-
+from datetime import datetime
 
 
 dash.register_page(__name__,path='/pandk/indicators')
@@ -955,5 +955,9 @@ def func(n_clicks,stored_data):
     'Xcolumns': 'XSeries',
     'Colors': 'Categories',
     })
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filenameprefix=df.iloc[0]['Indicator']
+    filename = f"{filenameprefix}_{timestamp}.xlsx"  
+
     
-    return dcc.send_data_frame(df.to_excel, "Results.xlsx", engine="xlsxwriter",index=False)
+    return dcc.send_data_frame(df.to_excel, filename, engine="xlsxwriter",index=False)
