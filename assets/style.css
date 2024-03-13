@@ -1,5 +1,6 @@
 .export,
-#btn-export {
+#btn-export,
+#btn-popup {
   background-color: white;
   font-size: 12px;
   border: 1px solid silver;
@@ -14,4 +15,13 @@
 #btn-export {
   margin-top: 5px;
   margin-left: 5px;
+}
+
+#btn-popup {
+  margin-left: 5px;
+}
+
+.e-rte-table,
+.e-rte-table tr td {
+  border: 1px solid silver;
 }

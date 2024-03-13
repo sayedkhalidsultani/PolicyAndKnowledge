@@ -85,3 +85,4 @@ XlsxWriter==3.2.0
 yarg==0.1.9
 yolk3k==0.9
 zipp==3.17.0
+dash_dangerously_set_inner_html==0.0.2

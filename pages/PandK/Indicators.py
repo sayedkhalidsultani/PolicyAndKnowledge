@@ -10,7 +10,7 @@ from plotly.subplots import make_subplots
 import math
 from db_utils import execute_query
 from datetime import datetime
-
+from dash_dangerously_set_inner_html import DangerouslySetInnerHTML
 
 dash.register_page(__name__,path='/pandk/indicators')
 
@@ -83,12 +83,24 @@ layout = html.Div(
                                                                 html.Div(
                                                                     [
                                                                 html.Button('Export Data', id='btn-export',style={'display': 'none'}, n_clicks=0),
+                                                                html.Button('Information', id='btn-popup',style={'display': 'none'}, n_clicks=0),
                                                                 html.Div(id="charts-ouput")],style={'border':'1px solid silver','padding-left':'5px'}),width=12
                                                                 ),
                                                             dcc.Store(id='store-data'),
                                                             dcc.Download(id="download-csv"),
-                                                           
-                                                            
+                                                            dcc.Store(id='store-info'),
+                                                            dbc.Modal(
+                                                                    [
+                                                                        dbc.ModalHeader(dbc.ModalTitle("Indicator Detail")),
+                                                                        dbc.ModalBody("", id='modal-body'),
+                                                                        dbc.ModalFooter(
+                                                                            dbc.Button("Close", id='close-modal', className="ms-auto", n_clicks=0)
+                                                                        ),
+                                                                    ],
+                                                                    id='info-modal',
+                                                                    is_open=False,
+                                                                ),
+        
                                                         ])
                                                         
                                                         
@@ -115,12 +127,12 @@ layout = html.Div(
 
 # Define the callback to update the bar charts
 @callback(
-            [Output("charts-ouput", "children"),Output('btn-export', 'style'),Output('store-data', 'data')],
+            [Output("charts-ouput", "children"),Output('btn-export', 'style'),Output('store-data', 'data'),Output('store-info', 'data'),Output('btn-popup', 'style')],
              #Output('store-data', 'data')
             [Input("SubCategory-dropdown", "value"),Input("Year-Slider", "value")])
 def update_bar_charts(selected_category,year_slider):
 
-    SQL_QUERY = "SELECT Indicator, Xcolumns, FirstColumnHeader, SubHeader, Colors, Year, [Values], ChartType, Source, xSecondary, r.SortOrder, ISPivot, Lat, Lon, ValueType, YaxisTitle,c.SubCategory FROM Results R INNER JOIN dbo.Categories c ON c.ID=r.SubCategoryID where c.SubCategory= %s and r.year between %s  and %s"
+    SQL_QUERY = "SELECT Indicator, Xcolumns, FirstColumnHeader, SubHeader, Colors, Year, [Values], ChartType, Source, xSecondary, r.SortOrder, ISPivot, Lat, Lon, ValueType, YaxisTitle,c.SubCategory,PopupContent FROM Results R INNER JOIN dbo.Categories c ON c.ID=r.SubCategoryID where c.SubCategory= %s and r.year between %s  and %s"
     df = execute_query(SQL_QUERY, (selected_category,year_slider[0],year_slider[1]))
     
     # Filter the DataFrame based on selected category
@@ -154,13 +166,31 @@ def update_bar_charts(selected_category,year_slider):
     charts = []
 
     # Show or hide buttons
+        # Popup Info
+    PopupText=None
+    ShowInfoButton=None
     
-    HidenExportButton = {'display': 'none'}
-    VisableExportButton = {'display': 'inline-block'}
+    HideButton = {'display': 'none'}
+    ShowButton = {'display': 'inline-block'}
+    
     if selected_category is not None:
-         ShowExportButtons=VisableExportButton
+         ShowExportButtons=ShowButton
+         ShowInfoButton=ShowButton
     else:
-        ShowExportButtons=HidenExportButton
+        ShowExportButtons=HideButton
+        ShowInfoButton=HideButton
+    
+
+    if not df.empty:
+        PopuInfo=df['PopupContent'].iloc[0]
+        if pd.notnull(PopuInfo) and bool(PopuInfo):
+           PopupText=PopuInfo
+           ShowInfoButton=ShowButton
+        else:
+            ShowInfoButton=HideButton
+            PopupText="No Information is available for given indicator"
+    
+    
     
     # Check for secondary
     for indicator in indicators:
@@ -193,7 +223,7 @@ def update_bar_charts(selected_category,year_slider):
 
         chart_type = indicator_df["ChartType"].iloc[0]
 
-   
+        
 
        
    
@@ -216,7 +246,7 @@ def update_bar_charts(selected_category,year_slider):
             xsecondary = None
 
         if xsecondary=='B' or xsecondary=='L':
-            ShowExportButtons=VisableExportButton
+            ShowExportButtons=ShowButton
             if chart_type == "Line":
                 LineBasevalues = indicator_df[indicator_df["xSecondary"] == "B"]
                 lineSecondaryvalues = indicator_df[indicator_df["xSecondary"] == "L"]
@@ -238,17 +268,17 @@ def update_bar_charts(selected_category,year_slider):
 
         else:
             if chart_type == "Bar":
-                ShowExportButtons=VisableExportButton
+                ShowExportButtons=ShowButton
                 fig = create_bar_chart(
                     indicator_df, indicator+'<br>'+'('+Source+')', yaxis_title, value_type, Stacked=False
                 )
             elif chart_type == "StackedBar":  # Add support for Horizontal Bar chart
-                ShowExportButtons=VisableExportButton
+                ShowExportButtons=ShowButton
                 fig = create_bar_chart(
                     indicator_df, indicator+'<br>'+'('+Source+')', yaxis_title, value_type, Stacked=True
                 )
             elif chart_type == "HBar":  # Add support for Horizontal Bar chart
-                ShowExportButtons=VisableExportButton
+                ShowExportButtons=ShowButton
                 fig = create_bar_chart(
                     indicator_df,
                     indicator+'<br>'+'('+Source+')',
@@ -261,7 +291,7 @@ def update_bar_charts(selected_category,year_slider):
             # Append the data table to the charts
             #   charts.append(html.Div([data_table]))
             elif chart_type == "Line" and (xsecondary!='B' or xsecondary!='L'):
-                ShowExportButtons=VisableExportButton
+                ShowExportButtons=ShowButton
                 # fig = create_line_chart(indicator_df, indicator, yaxis_title)
                 fig = create_line_chart(
                     indicator_df, indicator+'<br>'+'('+Source+')', yaxis_title, color_palette=color_palette
@@ -272,9 +302,9 @@ def update_bar_charts(selected_category,year_slider):
 
                 # Check if any SubCategory has more than 1 unique ChartType
                 if (unique_chart_types_per_subcategory > 1).any():
-                    ShowExportButtons=VisableExportButton
+                    ShowExportButtons=ShowButton
                 else:
-                    ShowExportButtons=HidenExportButton
+                    ShowExportButtons=HideButton
         
           
                 indicator_df['ISPivot'] = pd.to_numeric(indicator_df['ISPivot'], downcast='integer', errors='coerce')
@@ -445,7 +475,7 @@ def update_bar_charts(selected_category,year_slider):
                     )
                     
             elif chart_type=='TreeMap':
-                  ShowExportButtons=VisableExportButton
+                  ShowExportButtons=ShowButton
                   fig = go.Figure(go.Treemap(
                     labels=indicator_df["Xcolumns"],
                     values=indicator_df["Values"],
@@ -467,7 +497,7 @@ def update_bar_charts(selected_category,year_slider):
                 )
 
             elif chart_type == "Cart":
-                ShowExportButtons=VisableExportButton
+                ShowExportButtons=ShowButton
             
                 cards = [
                     create_indicator_card(row["Xcolumns"], row["Values"])
@@ -502,7 +532,7 @@ def update_bar_charts(selected_category,year_slider):
                     },
                 )
             elif chart_type == "MultiPieChart":
-                ShowExportButtons=VisableExportButton
+                ShowExportButtons=ShowButton
                 years = indicator_df["Year"].unique()
                 # Determine the layout for subplots
                 rows = 1  # Adjust based on your preference
@@ -586,7 +616,7 @@ def update_bar_charts(selected_category,year_slider):
     
 
 
-    return charts,ShowExportButtons,filtered_df.to_dict('records') #,filtered_df.to_dict('records')
+    return charts,ShowExportButtons,filtered_df.to_dict('records'),PopupText,ShowInfoButton #,filtered_df.to_dict('records')
 
 
 # New Code
@@ -965,7 +995,7 @@ def func(n_clicks,stored_data):
         raise PreventUpdate
     df = pd.DataFrame(stored_data)
     df = df.query("ChartType != 'Table'")
-    columns_to_exclude = ['FirstColumnHeader', 'SubHeader','Year','ChartType','Source','xSecondary','SortOrder','ISPivot','Lat','Lon','ValueType','YaxisTitle','SubCategory']
+    columns_to_exclude = ['FirstColumnHeader', 'SubHeader','Year','ChartType','Source','xSecondary','SortOrder','ISPivot','Lat','Lon','ValueType','YaxisTitle','SubCategory','PopupContent']
     df = df.drop(columns=columns_to_exclude)
     df = df.rename(columns={
     'Xcolumns': 'XSeries',
@@ -977,3 +1007,28 @@ def func(n_clicks,stored_data):
 
     
     return dcc.send_data_frame(df.to_excel, filename, engine="xlsxwriter",index=False)
+
+#Popup Content 
+@callback(
+    [Output('info-modal', 'is_open'), Output('modal-body', 'children')],
+    [Input('btn-popup', 'n_clicks'), Input('close-modal', 'n_clicks')],
+    [State('info-modal', 'is_open'), State('store-info', 'data')],
+    prevent_initial_call=True,
+)
+def toggle_modal(btn_popup_clicks, close_modal_clicks, is_open, store_data):
+    ctx = dash.callback_context
+
+    # Determine which input triggered the callback
+    if not ctx.triggered or ctx.triggered[0]['value'] == 0:
+        return is_open, ""
+    
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if button_id == 'btn-popup':
+        # When the 'Information' button is clicked, open the modal and display data from dcc.Store
+        return True, DangerouslySetInnerHTML(store_data)
+    elif button_id == 'close-modal':
+        # When the 'Close' button in the modal is clicked, close the modal
+        return False, ""
+    else:
+        return is_open, ""  # Return the current state if neither button was clicked
