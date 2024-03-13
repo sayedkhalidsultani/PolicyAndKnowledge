@@ -120,7 +120,7 @@ layout = html.Div(
             [Input("SubCategory-dropdown", "value"),Input("Year-Slider", "value")])
 def update_bar_charts(selected_category,year_slider):
 
-    SQL_QUERY = "SELECT Indicator, Xcolumns, FirstColumnHeader, SubHeader, Colors, Year, [Values], ChartType, Source, xSecondary, r.SortOrder, ISPivot, Lat, Lon, Unit, r.Category, ValueType, YaxisTitle,c.SubCategory FROM Results R INNER JOIN dbo.Categories c ON c.ID=r.SubCategoryID where c.SubCategory= %s and r.year between %s  and %s"
+    SQL_QUERY = "SELECT Indicator, Xcolumns, FirstColumnHeader, SubHeader, Colors, Year, [Values], ChartType, Source, xSecondary, r.SortOrder, ISPivot, Lat, Lon, ValueType, YaxisTitle,c.SubCategory FROM Results R INNER JOIN dbo.Categories c ON c.ID=r.SubCategoryID where c.SubCategory= %s and r.year between %s  and %s"
     df = execute_query(SQL_QUERY, (selected_category,year_slider[0],year_slider[1]))
     
     # Filter the DataFrame based on selected category
@@ -157,7 +157,10 @@ def update_bar_charts(selected_category,year_slider):
     
     HidenExportButton = {'display': 'none'}
     VisableExportButton = {'display': 'inline-block'}
-    ShowExportButtons=HidenExportButton
+    if selected_category is not None:
+         ShowExportButtons=VisableExportButton
+    else:
+        ShowExportButtons=HidenExportButton
     
     # Check for secondary
     for indicator in indicators:
@@ -265,7 +268,14 @@ def update_bar_charts(selected_category,year_slider):
                 )
 
             elif chart_type == "Table":
-                ShowExportButtons=HidenExportButton
+                unique_chart_types_per_subcategory = df.groupby('SubCategory')['ChartType'].nunique()
+
+                # Check if any SubCategory has more than 1 unique ChartType
+                if (unique_chart_types_per_subcategory > 1).any():
+                    ShowExportButtons=VisableExportButton
+                else:
+                    ShowExportButtons=HidenExportButton
+        
           
                 indicator_df['ISPivot'] = pd.to_numeric(indicator_df['ISPivot'], downcast='integer', errors='coerce')
                 indicator_df['Year'] = pd.to_numeric(indicator_df['Year'], errors='coerce')
@@ -360,32 +370,32 @@ def update_bar_charts(selected_category,year_slider):
                                 merge_duplicate_headers=True,
                                 style_header={"textAlign": "center"},
                                 style_data={"textAlign": "center"},
-                                style_data_conditional=[
-                                    # Conditional formatting for cells with zero
-                                    {
-                                        'if': {'column_id': col_id, 'filter_query': f'{{{col_id}}} = 0'},
-                                        'backgroundColor': 'black',
-                                        'color': 'white'
-                                    }
-                                    for col_id in [col['id'] for col in columns if col['id'] != 'index']  # Exclude the index column from formatting
-                                ] + [
-                                    # Conditional formatting for cells with values less than zero
-                                    {
-                                        'if': {'column_id': col_id, 'filter_query': f'{{{col_id}}} < 0'},
-                                        'backgroundColor': 'red',
-                                        'color': 'white'
-                                    }
-                                    for col_id in [col['id'] for col in columns if col['id'] != 'index']  # Exclude the index column from formatting
-                                ],
+                                # style_data_conditional=[
+                                #     # Conditional formatting for cells with zero
+                                #     {
+                                #         'if': {'column_id': col_id, 'filter_query': f'{{{col_id}}} = 0'},
+                                #         'backgroundColor': 'black',
+                                #         'color': 'white'
+                                #     }
+                                #     for col_id in [col['id'] for col in columns if col['id'] != 'index']  # Exclude the index column from formatting
+                                # ] + [
+                                #     # Conditional formatting for cells with values less than zero
+                                #     {
+                                #         'if': {'column_id': col_id, 'filter_query': f'{{{col_id}}} < 0'},
+                                #         'backgroundColor': 'red',
+                                #         'color': 'white'
+                                #     }
+                                #     for col_id in [col['id'] for col in columns if col['id'] != 'index']  # Exclude the index column from formatting
+                                # ],
               
-                                style_cell_conditional=[
-                                    {
-                                        "if": {
-                                            "column_id": "index"
-                                        },  # Assuming 'index' is the ID for your first column
-                                        "textAlign": "left",  # Align text to left for the first column
-                                    }
-                                ],
+                                # style_cell_conditional=[
+                                #     {
+                                #         "if": {
+                                #             "column_id": "index"
+                                #         },  # Assuming 'index' is the ID for your first column
+                                #         "textAlign": "left",  # Align text to left for the first column
+                                #     }
+                                # ],
                                 style_table={
                                     'maxHeight': '600px',  # Adjust based on your needs
                                     'overflowY': 'auto',
@@ -435,6 +445,7 @@ def update_bar_charts(selected_category,year_slider):
                     )
                     
             elif chart_type=='TreeMap':
+                  ShowExportButtons=VisableExportButton
                   fig = go.Figure(go.Treemap(
                     labels=indicator_df["Xcolumns"],
                     values=indicator_df["Values"],
@@ -456,6 +467,8 @@ def update_bar_charts(selected_category,year_slider):
                 )
 
             elif chart_type == "Cart":
+                ShowExportButtons=VisableExportButton
+            
                 cards = [
                     create_indicator_card(row["Xcolumns"], row["Values"])
                     for _, row in indicator_df.iterrows()
@@ -489,6 +502,7 @@ def update_bar_charts(selected_category,year_slider):
                     },
                 )
             elif chart_type == "MultiPieChart":
+                ShowExportButtons=VisableExportButton
                 years = indicator_df["Year"].unique()
                 # Determine the layout for subplots
                 rows = 1  # Adjust based on your preference
@@ -570,6 +584,7 @@ def update_bar_charts(selected_category,year_slider):
     #         },
     #     )
     
+
 
     return charts,ShowExportButtons,filtered_df.to_dict('records') #,filtered_df.to_dict('records')
 
@@ -949,7 +964,8 @@ def func(n_clicks,stored_data):
     if n_clicks is None or stored_data is None:
         raise PreventUpdate
     df = pd.DataFrame(stored_data)
-    columns_to_exclude = ['FirstColumnHeader', 'SubHeader','Year','ChartType','Source','xSecondary','SortOrder','ISPivot','Lat','Lon','Unit','Category','ValueType','YaxisTitle','SubCategory']
+    df = df.query("ChartType != 'Table'")
+    columns_to_exclude = ['FirstColumnHeader', 'SubHeader','Year','ChartType','Source','xSecondary','SortOrder','ISPivot','Lat','Lon','ValueType','YaxisTitle','SubCategory']
     df = df.drop(columns=columns_to_exclude)
     df = df.rename(columns={
     'Xcolumns': 'XSeries',
