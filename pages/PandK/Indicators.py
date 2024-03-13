@@ -99,6 +99,7 @@ layout = html.Div(
                                                                     ],
                                                                     id='info-modal',
                                                                     is_open=False,
+                                                                    size="lg"
                                                                 ),
         
                                                         ])
@@ -1026,7 +1027,7 @@ def toggle_modal(btn_popup_clicks, close_modal_clicks, is_open, store_data):
 
     if button_id == 'btn-popup':
         # When the 'Information' button is clicked, open the modal and display data from dcc.Store
-        return True, DangerouslySetInnerHTML(store_data)
+        return True, html.Pre(DangerouslySetInnerHTML(store_data),style={'whiteSpace': 'pre-wrap'})
     elif button_id == 'close-modal':
         # When the 'Close' button in the modal is clicked, close the modal
         return False, ""
