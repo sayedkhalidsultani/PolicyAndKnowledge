@@ -174,7 +174,7 @@ def update_bar_charts(selected_category,year_slider):
     HideButton = {'display': 'none'}
     ShowButton = {'display': 'inline-block'}
     
-    if selected_category is not None:
+    if selected_category is not None and not df.empty:
          ShowExportButtons=ShowButton
          ShowInfoButton=ShowButton
     else:
