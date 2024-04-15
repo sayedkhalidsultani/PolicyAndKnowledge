@@ -26,8 +26,8 @@ layout = html.Div(
                         [
                             html.H6("Login", className="mb-3"),
                             dcc.Location(id='url_login', refresh=True), 
-                            dbc.Input(id='username-box', placeholder='Username', type='text', className="mb-3"),
-                            dbc.Input(id='password-box', placeholder='Password', type='password', className="mb-3"),
+                            dbc.Input(id='username-box', placeholder='Username', type='text', className="mb-3",n_submit=0),
+                            dbc.Input(id='password-box', placeholder='Password', type='password', className="mb-3",n_submit=0),
                             dbc.Button('Login', id='login-button', n_clicks=0, className="d-flex justify-content-end"),
                             html.Div(id='Login-status',style={'color':'red'})  # Add this line to display update status
                         ],
@@ -52,13 +52,13 @@ layout = html.Div(
 )
 
 @callback([Output('url_login', 'pathname'),Output('Login-status', 'children')],
-              [Input('login-button', 'n_clicks')],
+              [Input('login-button', 'n_clicks'),Input('username-box', 'n_submit'), Input('password-box', 'n_submit')],
               [State('username-box', 'value'), State('password-box', 'value')])
-def successful_login(n_clicks, username, password):
+def successful_login(n_clicks,username_submit, password_submit, username, password):
     ctx = callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
     conn = None 
-    if triggered_id == 'login-button' and n_clicks > 0 :
+    if triggered_id in ['login-button', 'username-box', 'password-box'] and (n_clicks > 0 or username_submit > 0 or password_submit > 0) :
         query = "SELECT * FROM Users WHERE username = %s AND password = %s"
         params = (username, password)
         try:
