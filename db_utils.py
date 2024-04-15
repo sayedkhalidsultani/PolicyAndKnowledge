@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 # Make sure this is at the top of your db_utils.py file
 load_dotenv()
 
-server="mssql-163420-0.cloudclusters.net:12454"
+server=os.getenv('server')
 database=os.getenv('database')
 user=os.getenv('user')
 password=os.getenv('password')

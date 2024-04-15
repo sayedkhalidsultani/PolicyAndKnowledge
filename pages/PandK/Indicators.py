@@ -84,8 +84,9 @@ layout = html.Div(
                                                                     [
                                                                 html.Button('Export Data', id='btn-export',style={'display': 'none'}, n_clicks=0),
                                                                 html.Button('Information', id='btn-popup',style={'display': 'none'}, n_clicks=0),
-                                                                html.Div(id="charts-ouput")],style={'border':'1px solid silver','padding-left':'5px'}),width=12
+                                                                html.Div(id="charts-ouput")],style={'border':'1px solid silver'}),width=12
                                                                 ),
+                                                                
                                                             dcc.Store(id='store-data'),
                                                             dcc.Download(id="download-csv"),
                                                             dcc.Store(id='store-info'),
@@ -119,7 +120,7 @@ layout = html.Div(
                             justify="center",
                             style={'marginTop':'10px'}
                         ),
-                    ],style={'padding':'10px'}
+                    ],style={'padding':'10px','border': 'none'}
                    
                 ),
     ],
@@ -133,7 +134,7 @@ layout = html.Div(
             [Input("SubCategory-dropdown", "value"),Input("Year-Slider", "value")])
 def update_bar_charts(selected_category,year_slider):
 
-    SQL_QUERY = "SELECT Indicator, Xcolumns, FirstColumnHeader, SubHeader, Colors, Year, [Values], ChartType, Source, xSecondary, r.SortOrder, ISPivot, Lat, Lon, ValueType, YaxisTitle,c.SubCategory,PopupContent FROM Results R INNER JOIN dbo.Categories c ON c.ID=r.SubCategoryID where c.SubCategory= %s and r.year between %s  and %s"
+    SQL_QUERY = "SELECT Indicator, Xcolumns, FirstColumnHeader, SubHeader, Colors, Year, [Values], ChartType, Source, xSecondary, r.SortOrder, ISPivot, Lat, Lon, ValueType, YaxisTitle,c.SubCategory,PopupContent,LastUpdated FROM Results R INNER JOIN dbo.Categories c ON c.ID=r.SubCategoryID where c.SubCategory= %s and r.year between %s  and %s"
     df = execute_query(SQL_QUERY, (selected_category,year_slider[0],year_slider[1]))
     
     # Filter the DataFrame based on selected category
@@ -225,8 +226,8 @@ def update_bar_charts(selected_category,year_slider):
         chart_type = indicator_df["ChartType"].iloc[0]
 
         
-
-       
+        # Last Updated date
+        last_updated = indicator_df['LastUpdated'].iloc[0]
    
 
         #yaxis_title = indicator_df["YaxisTitle"].iloc[0]
@@ -614,8 +615,12 @@ def update_bar_charts(selected_category,year_slider):
     #             "margin-bottom": "10px",
     #         },
     #     )
-    
-
+        LastUpdatedLabel = html.Div([
+        html.Label(f"Last Updated: {last_updated}", style={'textAlign': 'right', 'color': '#888', 'fontSize': '0.8em', 'marginTop': '5px'})
+             ], style={
+        "padding": "10px", "margin-top": "10px", "margin-bottom": "10px","textAlign": "right"
+         })
+        charts.append(LastUpdatedLabel)
 
     return charts,ShowExportButtons,filtered_df.to_dict('records'),PopupText,ShowInfoButton #,filtered_df.to_dict('records')
 
